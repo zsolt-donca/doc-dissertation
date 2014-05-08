@@ -1,0 +1,142 @@
+
+\chapter{Test auditing}\label{chap:test-auditing}
+
+\section {Non-independent tests}\label{sec:non-independent-tests}
+
+Test suites testing even relatively complex applications can easily contain some hundred tests. Be-cause UI tests, by their nature, typically take much time, the total run time of an entire test suite is usually important. In order to keep the overall runtime at minimum, it is typical to avoid the creation, initialization and the destruction of the individual UI components for each test (which might also be difficult or impossible depending on the architecture of the application). A possible option is to test entire applications and to reuse the same components between the tests.
+
+The problem with testing entire applications throughout entire test suites is that the tests can be-come dependent on the internal state of the application and on the state of the UI. Thus, it is possible for one test to affect the outcome of another, e.g. one failing test can leave the application in such a state that no other further tests will pass. Having non-independent tests can lead to very fragile and unstable test systems and thus should be avoided as much as possible.
+
+Unstable test system can very difficult to cope with. Tests can seemingly fail randomly, and it can be very difficult to reproduce failures that originate from typically a subtle change in the application's state that was made by a previous test (possibly executed multiple tests before). FEST supports saving screenshots anytime during a test, but the test must explicitly save it and it is usually done only on errors. Since in the case of unstable tests, the errors typically manifest themselves only in the tests that are affected by the erroneous tests’ side effects, saving screenshots for failing tests does not help much on its own.
+
+Understanding the data flow of all the tests of an entire test suite, knowing all the operations that were made on the application’s state, along with screenshots made after all important steps can greatly reduce the debugging efforts of an unstable test suite and can benefit the test development and maintenance process.
+
+\section {AspectJ-based auditing}\label{sec:aspectj-auditing}
+
+A possible implementation of the auditing is by using AspectJ. The runtime system could rely on using join points defined by automatically generated pointcuts, and by using advices wrapping around the join points, the entire method invocation context (stack trace, method arguments) can be stored (logged). \cite{AOPwiki} From the context of each method invocation, an execution tree can then be built and visualized.
+
+The pointcuts could be generated for the methods of the classed in the test, user action, adapter, fixture, driver or robot layers. The deeper auditing goes through the layers, the more runtime data is gathered and the bigger is the performance cost of the auditing. Thus, it is important to make the set of the audited layers and methods configurable.
+
+Screenshots could be similarly generated after each user action (or adapter operation) of a test.
+
+\section {Formatting the audited data}\label{sec:formatting-audited-data}
+
+Since the runtime data set can be very huge for long tests runs, it is important to provide views that presents the data in an easily accessible, intuitive and adaptive form. 
+
+A possible implementation is to generate an HTML page that contains all the data in the form of a pivot table, with a tree axis showing the call hierarchy, and the columns presenting the method arguments and other context info. The pivot table would support drill-down in the call hierarchy. This table would support the following:
+\begin{itemize}
+\item Closing and expanding nodes (method calls) in the call hierarchy;
+\item Filtering and sorting by the context data (e.g. method names, arguments, annotations).
+\end{itemize}
+
+The following is a simple example of a test of a text editor application consisting of the following steps:
+\begin{itemize}
+\item create a new text file
+\item enter the text “hello” and “ world”, respectively
+\item save the text file to the disk
+\item assert that the editor shows the file name in the window’s title
+\item assert that the file exists on the disk and has the appropriate content
+\end{itemize}
+
+Table \ref{fig:formatted_audited_data_report} shows the method calls only of the test, user action and adapter layers, along with the arguments and the return values (if applicable).
+
+\begin{table}
+\caption{Formatted audited data report}
+\rowcolors{2}{gray!25}{white}
+\begin{tabular}{l l c}
+\rowcolor{gray!50}
+\hline\hline
+
+Method call & Arguments & Returns \\ [0.5ex] % inserts table heading
+\hline 
+
+EditorTest.saveNewTextFile & & PASSED \\
+  EditorUserActions.createNewTextFile & & \\
+    MenuAdapter.clickFileMenu & & \\ 
+    MenuAdapter.clickNewTextFileMenuItem & & \\ 
+  EditorUserActions.enterText & text=''hello'' & \\
+    TextAreaAdapter.getCaretPosition & & 0 \\
+    TextAreaAdapter.insertText & position=0, text=''hello'' & \\
+  EditorUserActions.enterText & text=''world'' & \\
+    TextAreaAdapter.getCaretPosition & & 5 \\
+    TextAreaAdapter.insertText & position=5, text='' world'' & \\
+  EditorUserActions.saveCurrentEditor & filename=''C:{\textbackslash}helloWorld.txt'' & \\
+    MenuAdapter.clickFileMenu & & \\
+    MenuAdapter.clickSaveMenuItem & & \\
+    DialogAdapter.setFileName & filename=''C:{\textbackslash}helloWorld.txt'' & \\
+    DialogAdapter.clickSaveButton & & \\
+    DialogAdapter.expectToDisappear & & \\	 
+  EditorUserActions.expectTitle & title=''helloWorld'' & \\
+    MainWindowAdapter.expectTitle & title=''My Notepad - helloWorld'' & \\
+    FileUtils.expectFileContents &
+    \begin{tabular}[x]{@{}c@{}}
+       path=''C:{\textbackslash}helloWorld.txt", \\
+      contents=''hello world''
+    \end{tabular} & \\
+
+\hline
+
+\end{tabular}
+\label{fig:formatted_audited_data_report}
+\end{table}
+
+\chapter{Automatic EDT dispatch}\label{chap:edt-dispatch}
+
+\section{Cumbersome synchronization with EDT}\label{sec:edt-sync}
+
+Since the threading model of Swing recommends that all Swing-component-related operations are to be made on the Swing EDT thread, including those of the tests, it is the test developer's responsibility to delegate all such work to the EDT thread by using FEST-Swing's GuiActionRunner. For tests using the User Action and Adapter design pattern, this can lead to much boilerplate code in the adapter layer. 
+
+A solution to having to manually delegate work to EDT would be to mark the methods that needs to run on EDT with a certain annotation and let the runtime system do the delegation automatically. This would lead to lesser effort from the developer's side, and at the same time, would lead to increased security on the tests’ correctness.
+
+There can also be methods that must not be invoked on EDT (e.g. most FEST methods, because they check the contents of event queues). Executing those methods on EDT can lead either to exceptions, to the tests hanging, or simply to incorrect behavior. Marking such methods with a certain annotation and letting the runtime system ensure that the test fails whenever the test executes such a method on EDT would also lead to increased security on the tests' correctness.
+
+\section {Automatic EDT dispatch}\label{sec:edt-dispatch}
+
+The operations need to be marked with certain annotations and the runtime system behind the scenes automatically handles the delegation.
+
+\chapter {Simulated drag-and-drop}\label{chap:simulated-dnd}
+
+\section{Defective DnD with Cacio-tta}\label{sec:defective-dnd}
+
+FEST-Swing completely supports mouse gesture-based drag-and-drop (DnD) between Swing components, allowing the tests to cover that part of the application's functionality. However, some limitations (see above \fullref{sec:limitations}) often required the tests system to use the alternative graphics stack implementation named Cacio-tta \cite{Cacio_Tta_FEST} with the known limitation that it does not provide the required system-level support for drag and drop. Thus, in such test systems the mouse gesture-based approach of FEST-Swing's does not work.
+
+A solution would be to programmatically trigger the data export and import operations on the Swing components, thus simulating the drag and drop without any mouse movement. However, because of the platform-dependent nature of the Swing (and AWT) DnD subsystem \cite{IntroDnD} \cite{DnDSubsystem}, this is not trivial to be realized.
+
+\section{Drag and drop in Swing - Behind the scenes}\label{sec:dnd-swing}
+
+Let us say that the user, who is running a Java application, wants to drag some text from a list and deposit it into a text field. Briefly, the drag and drop process consists of the following steps \cite{IntroDnD}:
+
+\begin{enumerate}
+\item The user has selected a row of text in the source component: the list. While holding the mouse button the user begins to drag the text — this initiates the drag gesture.
+\item \label{item:drag-begin} When the drag begins, the list component packages up the data for export and declares what source actions it supports (i.e. COPY, MOVE, or LINK).
+\item As the user drags the data, Swing continuously calculates the location and handles the rendering.
+\item If the user simultaneously holds the Shift and/or Control key during the drag, this user action is also part of the drag gesture. Typically, an ordinary drag requests the MOVE action. Holding the Control key while dragging requests the COPY action, and holding both Shift and Control requests the LINK action.
+\item \label{item:insert-location} Once the user drags the text over the bounds of a text field component, the target is continually polled to see if it will accept or reject the potential drop. As he drags, the target provides feedback by showing the insert location, perhaps an insertion cursor or a high-lighted selection. In the current example, the text field (the current target) allows both re-placement of selected text and insertion of new text.
+\item \label{item:import-data} When the user releases the mouse button, the text component imports the data by inspecting the declared source actions and any user action and then it chooses what it wants out of the available options. In the current example, the text field chooses to insert the new text at the point of the drop.
+\end{enumerate}
+
+While this might seem like a daunting process, Swing handles most of the work out of the box. The Swing framework is designed so that the developer plug in the details specific to the components, and the rest is automatic.
+
+\section {Simulated drag-and-drop}\label{sec:simulated-dnd}
+
+By doing the following steps, the tests can programmatically trigger drag-and-drop:
+\begin{enumerate}
+\item Trigger an export on the source component (see point \ref{item:drag-begin} above).
+\item Set the proper insert location at the destination component (see point \ref{item:insert-location} above).
+\item Trigger the import of the data (see point \ref{item:import-data} above).
+\end{enumerate}
+
+\chapter{Non-functional requirements}\label{chap:nfr}
+
+\section{Scala}\label{sec:nfr-scala}
+
+The language of choice for implementing the extension framework should be Scala. It offers advanced functional programming paradigms for the JVM platform, while keeping full compatibility and interoperability with Java systems. \cite{ScalaWiki}
+
+\section{Integration with Spring}\label{sec:nfr-spring}
+The extension framework should support tests built on Spring Framework, \cite{SpringWiki} the popular enter-prise application framework. At least the configuration of the extension framework should be possible through the Spring context, and some or all of the features could be based on Spring’s AOP services.
+
+\section{Integration with Maven}\label{sec:nfr-maven}
+
+The extension framework should support integration with Apache Maven, \cite{MavenWiki} the popular build automation tool.  The audit report should be integrated into the tests’ standard surefire or failsafe reports. If the AspectJ-based features of the extension framework need any additional pre-compilation steps or advanced classpath configuration, they should also be implemented by custom Maven plugins integrating into the corresponding Maven lifecycle phases.
+
+
