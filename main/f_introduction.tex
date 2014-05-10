@@ -3,28 +3,30 @@
 
 \section{Abstract}\label{sec:abstract}
 
-FEST-Logging an extension for the functional testing system FEST-Swing that tests Swing based desktop Java applications. The extension is a framework that easily integrates into existing FEST-Swing-based test systems requiring few code changes. The only requirements is that they have to be built on a common design pattern.
+FEST-Logging an extension for the functional GUI testing system FEST-Swing that tests Swing based desktop Java applications or applets. FEST-Logging logs execution details of test suites, helping development, troubleshooting or optimization efforts, easily integrating into existing test systems requiring few code changes.
+
+FEST-Logging is demonstrated with a simple file manager application developed in the functional programming language \emph{Scala}. The application was developed using the library \emph{Scala.React} as a proof-of-concept of the article \emph{Deprecating the Observer Pattern with Scala.React}\cite{DeprecatingObservers}.
 
 \section{Overview}\label{sec:overview}
 
 This document consists of the following parts:
 \begin{itemize}
-\item a brief explanation of the test framework (\fullref{chap:fest-swing})
-\item a common design pattern associated with UI tests (\fullref{chap:user-actions-adapters})
+\item a brief explanation of the test framework (\fullref{sec:fest-swing})
+\item a common design pattern associated with UI tests (\fullref{sec:user-actions-adapters})
 \item the features of the extension framework
 	\begin{itemize}
-	\item \fullref{chap:test-auditing}
-	\item \fullref{chap:edt-dispatch}
-	\item \fullref{chap:simulated-dnd}
+	\item \fullref{sec:test-auditing}
+	\item \fullref{sec:edt-dispatch}
+	\item \fullref{sec:simulated-dnd}
 	\end{itemize}
-\item \fullref{chap:nfr}
+\item \fullref{sec:nfr}
 \end{itemize}
 
 \noindent The main features of the extension framework are the following:
 \begin{itemize}
-\item test auditing (\fullref{chap:test-auditing}):
+\item test auditing (\fullref{sec:test-auditing}):
 	\begin{itemize}
-	\item the goal is to ease the troubleshooting of non-independent tests by providing de-tails of the test runs
+	\item the goal is to ease the troubleshooting of non-independent tests by providing details of the test runs
 	\item intended to log runtime data (e.g. arguments of the method calls)
 	\item seamlessly integrates into the various layers of the tests (i.e. test, user action, adapter, fixture, driver, robot)
 	\item allows to create a movie for a test (e.g. creating screenshots after each user action of a test)
@@ -33,13 +35,13 @@ This document consists of the following parts:
 \end{itemize}
 
 \begin{itemize}
-\item automatic thread dispatch (\fullref{chap:edt-dispatch}):
+\item automatic thread dispatch (\fullref{sec:edt-dispatch}):
 	\begin{itemize}
-	\item the goal is to simplify the development of thread-safe tests by automatically dele-gating operations to Swing EDT
-	\item the operations need to be marked with certain annotations and the runtime sys-tem behind the scenes automatically handles the delegation
+	\item the goal is to simplify the development of thread-safe tests by automatically delegating operations to Swing EDT
+	\item the operations need to be marked with certain annotations and the runtime system behind the scenes automatically handles the delegation
 	\end{itemize}
 
-\item simulated drag-and-drop (\fullref{chap:simulated-dnd}):
+\item simulated drag-and-drop (\fullref{sec:simulated-dnd}):
 	\begin{itemize}
 	\item the goal is to solve a major problem for Continuous Integration systems
 	\end{itemize}
@@ -48,7 +50,7 @@ This document consists of the following parts:
 \noindent The implementation details are the following:
 
 \begin{itemize}
-\item Scala: as a language of choice for implementing the framework, while keeping full compati-bility with Java systems;
+\item Scala: as a language of choice for implementing the framework, while keeping full compatibility with Java systems;
 \item Spring: configuration, IoC and AOP capabilities;
 \item AspectJ: aspects implementing the auditing (e.g. by altering the test methods, user actions etc.)
 \item Mockito: while primarily used for testing (for mocking dependencies), also can be used to mock certain classes of the AWT drag-and-drop system, with the purpose of simulated drag-and-drop by programmatically triggering data export and import.
