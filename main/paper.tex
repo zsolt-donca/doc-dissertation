@@ -1,9 +1,9 @@
 
-\documentclass[12pt, a4paper, oneside]{book}
+\documentclass[12pt, a4paper, twoside]{book}
 
 % margó és sorköz beállítása a követelmények szerint
 \usepackage[top=2cm,bottom=2cm,left=2.5cm,right=2cm]{geometry}
-\linespread{1.3} % másfeles sorköz
+\linespread{1.2}
 
 \usepackage{t1enc}
 \usepackage{ucs}
@@ -15,6 +15,12 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 
+\usepackage[table]{xcolor}
+\usepackage{listings}
+\usepackage[colorlinks=true]{hyperref}
+\newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}} % One single link
+
+
 % subsubsection megszámozása és bevitele a tartalomjegyzékbe
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
@@ -25,14 +31,11 @@
 
 \tableofcontents
 
-
-%\include{f_bevezetes}
-% \include{f_tortenet}
-%\include{f_elmelet}
-%\include{f_matematikai_hatter}
-%\include{f_projekt_felepitese}
+\include{f_introduction}
+\include{f_theory}
+\include{f_implementation}
 
 \bibliographystyle{plain}
-\bibliography{bibliography}
+\bibliography{paper_bibliography}
 
 \end{document}
