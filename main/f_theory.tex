@@ -38,14 +38,12 @@ To the frame, the test's setup method needs to create the frame (in the EDT, del
 
 \begin{figure}[h!] \label{fig:example_setup_method}
 \begin{lstlisting}
-protected void onSetUp() {
-    MyFrame frame = GuiActionRunner.execute(new GuiQuery<MyFrame>() {
-        protected MyFrame executeInEDT() {
-            return new MyFrame();  
-        }
-    });
-    window = new FrameFixture(robot(), frame);
-    window.show(); // shows the frame to test
+protected def onSetUp : Unit = {
+    val frame : MyFrame = GuiActionRunner.execute(new GuiQuery[MyFrame] {
+        protected def executeInEDT() : MyFrame = new MyFrame
+    })
+    window = new FrameFixture(robot, frame)
+    window.show() // shows the frame to test
 }
 \end{lstlisting}
 \caption{The setup method creating the frame and the fixture, and making it visible.}
@@ -56,10 +54,10 @@ The test method can use the fixture to simulate a user interacting with a GUI in
 \begin{figure}[h!] \label{fig:example_test_method}
 \begin{lstlisting}
 @Test 
-public void shouldCopyTextInLabelWhenClickingButton() {
-    window.textBox("textToCopy").enterText("Some random text");
-    window.button("copyButton").click();
-    window.label("copiedText").requireText("Some random text");
+def shouldCopyTextInLabelWhenClickingButton : Unit = {
+    window.textBox("textToCopy").enterText("Some random text")
+    window.button("copyButton").click()
+    window.label("copiedText").requireText("Some random text")
 }
 \end{lstlisting}
 \caption{The test method.}
@@ -107,23 +105,24 @@ For example, let us consider a case where the user wants to save the file in the
 
 \section{Scala-React}\label{sec:scala-react}
 
-Programming systems with interactive user interfaces requires a considerable amount of engineering to deal with continuous user input and output, yet the predominant programming models dealing with continuous state change in an application are relatively simplistic, mainly consisting of the observer pattern. The Scala library \emph{Scala-React} offers a reactive data-flow programming model, and by that it solves numerous problems that a design based on the observer pattern faces.\cite{DeprecatingObservers} Amongst multiple Scala features, this is enabled by the higher order concepts of events and state, enabled by Scala's higher-order functions, and by a data-flow DSL embedded into Scala, enabled by continuation passing style transformation that \emph{Scala} offers.
+Programming systems with interactive user interfaces requires a considerable amount of engineering to deal with continuous user input and output, yet the predominant programming models dealing with continuous state change in applications is the observer pattern. The Scala library \emph{Scala-React} offers a reactive data-flow programming model, and by that it solves numerous engineering problems observer pattern-based design faces. Amongst multiple Scala features, this is enabled by the higher order concepts of events and state, enabled by Scala's higher-order functions, and by a data-flow DSL embedded into Scala, enabled by continuation passing style transformation that \emph{Scala} offers. Its design is also heavily based on Scala's \emph{traits}, simplifying the binding of observer-based interfaces to the reactive abstractions.\cite{DeprecatingObservers}
 
+\subsection{Event streams}
 
+The base of simplifying the event logic is a general interface, offering uniformity, abstraction and reusability. The class {\tt EventSource[A]} represents a generic source of events of type {\tt A}. It is possible to schedule an event source to emit a value at any time. Let is consider an example of an event source of type integer emitting two events:
+\begin{lstlisting}
+val es = new EventSource[Int]
+es emit 1; es emit 2
+\end{lstlisting}
 
+We can print all events from the event source to the console as follows:
+\begin{lstlisting}
+val ob = observe(es) { x => println("Receiving " + x) }
+\end{lstlisting}
 
+\subsection{Reactors}
 
-
-
-
-
-
-
-
-
-
-
-
+\subsection{Signals}
 
 
 
