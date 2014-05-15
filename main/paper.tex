@@ -1,41 +1,140 @@
+% BEÁLLÍTÁSOK - JOBB NEM VÁLTOZTATNI
+\documentclass[final]{ubb_dolgozat}
+\usepackage{definitions}
+%%
 
-\documentclass[12pt, a4paper, twoside]{book}
 
-% margÃ³ Ã©s sorkÃ¶z beÃ¡llÃ­tÃ¡sa a kÃ¶vetelmÃ©nyek szerint
-\usepackage[top=2cm,bottom=2cm,left=2.5cm,right=2cm]{geometry}
-\linespread{1.2}
+% milyen nyelveken akarunk forráskódot megjeleníteni
+\lstloadlanguages{java,scala}
 
-\usepackage{t1enc}
-\usepackage{ucs}
-\usepackage[utf8x]{inputenc}
+% ezt be lehet tenni MINDEGYIK megjelenítendõ kód elé.
+\lstset{language=scala}
 
-\usepackage[pdftex]{graphicx}
-\usepackage{url}
-\usepackage{algorithmic}
-\usepackage{amsmath}
-\usepackage{amssymb}
 
-\usepackage[table]{xcolor}
-\usepackage{listings}
-\usepackage[colorlinks=true]{hyperref}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%!!          EZT KELL VÁLTOZTATNI       !!%%%%
+%%     A DOLGOZAT CÍMOLDALÁNAK ELEMEI        %%
+
+%% MELYIK ÉVBEN ADJUK LE
+\submityear{%
+2014
+}
+%% MELYIK HÓNAPBAN ADJUK LE
+\submitmonthHU{%
+Július
+}
+\submitmonthRO{%
+Iulie
+}
+\submitmonthEN{%
+July
+}
+
+\titleHU{%
+Egy Ügyes Vizsgadolgozat
+}
+
+% Amennyiben szükséges, az alábbi sorokat ki kell komment-ezni és 
+% beírni a megfelelõ címeket
+
+\titleEN{%
+  FEST-Logging
+}
+
+\titleRO{%
+  FEST-Logging
+}
+
+\author{%
+Zsolt Donca
+}
+
+%%
+\tutorHU{%
+dr. Csató Lehel, egyetemi docens\\
+%{\large Babe\c{s}--Bolyai Tudományegyetem,\\
+% Matematika és Informatika Kar}% ha különbözik, akkor fel kell tûntetni
+}
+%%
+\tutorRO{%
+Conf. dr, Lehel Csató\\
+% {\large Universitatea Babe\c{s}--Bolyai,\\ % dacã diferã!!!
+% Facultatea de Matematic\u{a} \c{s}i Informatic\u{a} }%
+}
+%%
+\tutorEN{%
+Assoc. prof. dr. Lehel Csató
+% {\large Babe\c{s}--Bolyai University,\\
+% Faculty of Mathematics and Informatics}
+}
+
+
+
+%\usepackage{t1enc}
+%\usepackage{ucs}
+%\usepackage[utf8x]{inputenc}
+
+%\usepackage[pdftex]{graphicx}
+%\usepackage{url}
+%\usepackage{algorithmic}
+%\usepackage{amsmath}
+%\usepackage{amssymb}
+
+%\usepackage[table]{xcolor}
+%\usepackage{listings}
+%\usepackage[colorlinks=true]{hyperref}
 \newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}} % One single link
 
 
-% subsubsection megszÃ¡mozÃ¡sa Ã©s bevitele a tartalomjegyzÃ©kbe
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
+
+%\setcounter{secnumdepth}{3}
+%\setcounter{tocdepth}{3}
+
+
 
 \begin{document}
 
-\include{title}
+%% ABSTRAKT
+\begin{abstractEN} % ANGOL VÁLTOZAT
 
-\tableofcontents
+% a lenti részt értelemszerûen ki kell tölteni a dolgozat angol kivonatával.
+% A BEGIN ... END között CSAK A SAJÁT SZÖVEG kell, hogy legyen.
+% Az utolsó mondatot benne kell hagyni, mely által kijelentitek, hogy a munkátok SAJÁT.
+
+
+{ \color{gray!60!red}
+	FEST-Logging an extension for the functional GUI testing system FEST-Swing that tests Swing based desktop Java applications or applets. FEST-Logging logs execution details of test suites, helping development, troubleshooting or optimization efforts, easily integrating into existing test systems requiring few code changes.
+
+FEST-Logging is demonstrated with a simple file manager application developed in the functional programming language \emph{Scala}. The application was developed using the library \emph{Scala.React} as a proof-of-concept of the article \emph{Deprecating the Observer Pattern with Scala.React}\cite{DeprecatingObservers}.
+
+	\vfill
+  
+}
+
+This work is the result of my own activity. I have neither given nor received unauthorized assistance on this work.
+
+\end{abstractEN}
+
+
+\maketitle
+
+{ \baselineskip 1ex
+  \parskip 1ex
+  \tableofcontents
+}
+
 
 \include{f_introduction}
 \include{f_theory}
 \include{f_implementation}
 
-\bibliographystyle{plain}
-\bibliography{paper_bibliography}
+
+{ \renewcommand{\baselinestretch}{0.8}\normalsize %
+  \setlength{\itemsep}{-2.4mm}
+  \setlength{\bibspacing}{0.67\baselineskip}
+  \bibliographystyle{abbrvnat}
+  \bibliography{paper_bibliography}
+}
+
 
 \end{document}

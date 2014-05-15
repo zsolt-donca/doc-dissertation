@@ -9,9 +9,9 @@ Test suites testing even relatively complex applications can easily contain some
 
 The problem with testing entire applications throughout entire test suites is that the tests can become dependent on the internal state of the application and on the state of the UI. Thus, it is possible for one test to affect the outcome of another, e.g. one failing test can leave the application in such a state that no other further tests will pass. Having non-independent tests can lead to very fragile and unstable test systems and thus should be avoided as much as possible.
 
-Unstable test system can very difficult to cope with. Tests can seemingly fail randomly, and it can be very difficult to reproduce failures that originate from typically a subtle change in the application's state that was made by a previous test (possibly executed multiple tests before). FEST supports saving screenshots anytime during a test, but the test must explicitly save it and it is usually done only on errors. Since in the case of unstable tests, the errors typically manifest themselves only in the tests that are affected by the erroneous tests’ side effects, saving screenshots for failing tests does not help much on its own.
+Unstable test system can very difficult to cope with. Tests can seemingly fail randomly, and it can be very difficult to reproduce failures that originate from typically a subtle change in the application's state that was made by a previous test (possibly executed multiple tests before). FEST supports saving screenshots anytime during a test, but the test must explicitly save it and it is usually done only on errors. Since in the case of unstable tests, the errors typically manifest themselves only in the tests that are affected by the erroneous tests' side effects, saving screenshots for failing tests does not help much on its own.
 
-Understanding the data flow of all the tests of an entire test suite, knowing all the operations that were made on the application’s state, along with screenshots made after all important steps can greatly reduce the debugging efforts of an unstable test suite and can benefit the test development and maintenance process.
+Understanding the data flow of all the tests of an entire test suite, knowing all the operations that were made on the application's state, along with screenshots made after all important steps can greatly reduce the debugging efforts of an unstable test suite and can benefit the test development and maintenance process.
 
 \subsection {AspectJ-based auditing}
 
@@ -34,9 +34,9 @@ A possible implementation is to generate an HTML page that contains all the data
 The following is a simple example of a test of a text editor application consisting of the following steps:
 \begin{itemize}
 \item create a new text file
-\item enter the text “hello” and “ world”, respectively
+\item enter the text ``hello'' and `` world'', respectively
 \item save the text file to the disk
-\item assert that the editor shows the file name in the window’s title
+\item assert that the editor shows the file name in the window's title
 \item assert that the file exists on the disk and has the appropriate content
 \end{itemize}
 
@@ -44,9 +44,9 @@ Table \ref{fig:formatted_audited_data_report} shows the method calls only of the
 
 \begin{table}
 \caption{Formatted audited data report}
-\rowcolors{2}{gray!25}{white}
+%\rowcolors{2}{gray!25}{white}
 \begin{tabular}{l l c}
-\rowcolor{gray!50}
+%\rowcolor{gray!50}
 \hline\hline
 
 Method call & Arguments & Returns \\ [0.5ex] % inserts table heading
@@ -88,7 +88,7 @@ Method call & Arguments & Returns \\ [0.5ex] % inserts table heading
 
 Since the threading model of Swing recommends that all Swing-component-related operations are to be made on the Swing EDT thread, including those of the tests, it is the test developer's responsibility to delegate all such work to the EDT thread by using FEST-Swing's GuiActionRunner. For tests using the User Action and Adapter design pattern, this can lead to much boilerplate code in the adapter layer. 
 
-A solution to having to manually delegate work to EDT would be to mark the methods that needs to run on EDT with a certain annotation and let the runtime system do the delegation automatically. This would lead to lesser effort from the developer's side, and at the same time, would lead to increased security on the tests’ correctness.
+A solution to having to manually delegate work to EDT would be to mark the methods that needs to run on EDT with a certain annotation and let the runtime system do the delegation automatically. This would lead to lesser effort from the developer's side, and at the same time, would lead to increased security on the tests' correctness.
 
 There can also be methods that must not be invoked on EDT (e.g. most FEST methods, because they check the contents of event queues). Executing those methods on EDT can lead either to exceptions, to the tests hanging, or simply to incorrect behavior. Marking such methods with a certain annotation and letting the runtime system ensure that the test fails whenever the test executes such a method on EDT would also lead to increased security on the tests' correctness.
 
@@ -109,7 +109,7 @@ A solution would be to programmatically trigger the data export and import opera
 Let us say that the user, who is running a Java application, wants to drag some text from a list and deposit it into a text field. Briefly, the drag and drop process consists of the following steps \cite{IntroDnD}:
 
 \begin{enumerate}
-\item The user has selected a row of text in the source component: the list. While holding the mouse button the user begins to drag the text — this initiates the drag gesture.
+\item The user has selected a row of text in the source component: the list. While holding the mouse button the user begins to drag the text - this initiates the drag gesture.
 \item \label{item:drag-begin} When the drag begins, the list component packages up the data for export and declares what source actions it supports (i.e. COPY, MOVE, or LINK).
 \item As the user drags the data, Swing continuously calculates the location and handles the rendering.
 \item If the user simultaneously holds the Shift and/or Control key during the drag, this user action is also part of the drag gesture. Typically, an ordinary drag requests the MOVE action. Holding the Control key while dragging requests the COPY action, and holding both Shift and Control requests the LINK action.
@@ -135,11 +135,11 @@ By doing the following steps, the tests can programmatically trigger drag-and-dr
 The language of choice for implementing the extension framework should be Scala. It offers advanced functional programming paradigms for the JVM platform, while keeping full compatibility and interoperability with Java systems. \cite{ScalaWiki}
 
 \subsection{Integration with Spring}\label{sec:nfr-spring}
-The extension framework should support tests built on Spring Framework, \cite{SpringWiki} the popular enterprise application framework. At least the configuration of the extension framework should be possible through the Spring context, and some or all of the features could be based on Spring’s AOP services.
+The extension framework should support tests built on Spring Framework, \cite{SpringWiki} the popular enterprise application framework. At least the configuration of the extension framework should be possible through the Spring context, and some or all of the features could be based on Spring's AOP services.
 
 \subsection{Integration with Maven}\label{sec:nfr-maven}
 
-The extension framework should support integration with Apache Maven, \cite{MavenWiki} the popular build automation tool.  The audit report should be integrated into the tests’ standard surefire or failsafe reports. If the AspectJ-based features of the extension framework need any additional pre-compilation steps or advanced classpath configuration, they should also be implemented by custom Maven plugins integrating into the corresponding Maven lifecycle phases.
+The extension framework should support integration with Apache Maven, \cite{MavenWiki} the popular build automation tool.  The audit report should be integrated into the tests' standard surefire or failsafe reports. If the AspectJ-based features of the extension framework need any additional pre-compilation steps or advanced classpath configuration, they should also be implemented by custom Maven plugins integrating into the corresponding Maven lifecycle phases.
 
 \section{Scala Commander}\label{sec:scala-commander}
 
