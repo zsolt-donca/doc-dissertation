@@ -38,7 +38,7 @@ To the frame, the test's setup method needs to create the frame (in the EDT, del
 
 \begin{figure}[h!] \label{fig:example_setup_method}
 \begin{lstlisting}
-protected def onSetUp : Unit = {
+protected def onSetUp() : Unit = {
     val frame : MyFrame = GuiActionRunner.execute(new GuiQuery[MyFrame] {
         protected def executeInEDT() : MyFrame = new MyFrame
     })
@@ -79,13 +79,13 @@ Because of this, it is common to delegate the tests to Continuous Integration (C
 
 However, if the target platform is Windows, there are a whole set of issues, and the known solutions are problematic, and are very complicated and time consuming to setup. \cite{HudsonUnderWindows} \cite{Cacio_Tta_FEST}
 
-To overcome all of these limitations, OpenJDK’s project Caciocavallo can be used \cite{Cacio_Tta_FEST} to provide a graphics stack for the Java VM that is completely independent from the environment, eliminating any need for platform-dependent setup for CI systems. It renders everything into a virtual screen (which is simply a BufferedImage object), and is driven solely by AWT Robot events. However, this also has its own limitations; the most important being that drag-and-drop \cite{IntroDnD} is unsupported, thus it needs certain workarounds (see \fullref{sec:simulated-dnd}).
+To overcome all of these limitations, OpenJDK's project Caciocavallo can be used \cite{Cacio_Tta_FEST} to provide a graphics stack for the Java VM that is completely independent from the environment, eliminating any need for platform-dependent setup for CI systems. It renders everything into a virtual screen (which is simply a BufferedImage object), and is driven solely by AWT Robot events. However, this also has its own limitations; the most important being that drag-and-drop \cite{IntroDnD} is unsupported, thus it needs certain workarounds (see \fullref{sec:simulated-dnd}).
 
 \section{User Action and Adapter design pattern}\label{sec:user-actions-adapters}
 
 The users using an application with a UI typically interact with it by executing a series of operations that change the application's state. These operations might themselves be consisting of multiple operations of the UI components, changing the UI's state and, indirectly, changing the application's internal state. UI test simulating the users can incorporate in their architecture the concept of separation: the tests can interact with a user action layer (consisting of the actions the user can do with the application), and the user actions can interact with an adapter layer that itself interacts with the UI components (e.g. by using FEST-Swing).
 
-The same separation applies to the tests’ assertions: the tests assert the application's state through the user actions, and the user actions assert the UI's state, and thus, indirectly, assert the application's internal state.
+The same separation applies to the tests' assertions: the tests assert the application's state through the user actions, and the user actions assert the UI's state, and thus, indirectly, assert the application's internal state.
 
 \subsection{Adapters}
 
