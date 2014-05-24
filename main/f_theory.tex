@@ -315,12 +315,17 @@ Since the Scala CPS plugin uses compile-time transformation, applications using 
 
 There are typically two use cases of delimited continuations. In cases where the reset block returns a value, the continuation itself is typically runs to its end, with the return results being the primary meaning of the computation which is directly returned to the invoker of the \texttt{reset} block. This is similar to how an ordinary computation (without delimited continuations) would obtain its value. Functions that are to part of the continuation needs to be annotated with the annotation \texttt{@cpsParam[A, B]} (if the compiler cannot otherwise infer the annotation), where \texttt{A} is the \emph{current} answer type and \texttt{B} is the return type of the continuation.
 
-In cases where the return type of the continuation is of type \texttt{Unit}, the continuation is only invoked for its \emph{side effect}. In this case, the state of the continuation is typically \emph{stored} somewhere in the system to be later executed, and the invoker of the \emph{reset} block typically gets the control back before the rest of the continuation would be executed. In this case, the answer type is \texttt{Unit}, and the annotation \texttt{@cpsParam[Unit, Unit]} has its own alias in the form \texttt{@suspendable}.
+In cases where the return type of the continuation is of type \texttt{Unit}, the continuation is only invoked for its \emph{side effect}. In this case, the state of the continuation is typically \emph{stored} somewhere in the system to be later executed, and the invoker of the \texttt{reset} block typically gets the control back before the rest of the continuation would be executed. In this case, the answer type is \texttt{Unit}, and the annotation \texttt{@cpsParam[Unit, Unit]} has its own alias in the form \texttt{@suspendable}.
+
+\subsection{How it works}
+
+The value of the reset block is always equal to the return result of the very first \texttt{shift} block that gets executed.
 
 \subsection{Examples}
 
-The below example 
+Example \ref{fig:example_cps_1} shows a simple numeric example. The value of the \texttt{reset} block is equal to the value of the \texttt{shift} block plus one. The \texttt{shift}, block gets the rest of the continuation in the form of the function \texttt{k}, which in this case is the function \(x + 1\). The shift block invokes \texttt{k} with the argument 7 and returns the resulting value 8, which is then the value of the \texttt{reset} block. This value is then multiplied by 2 (outside the continuation), so the printed value is 16.
 
+\begin{figure}[h!] \label{fig:example_cps_1}
 \begin{lstlisting}
 val v1 = reset {
   shift { k: (Int=>Int) =>
@@ -329,6 +334,59 @@ val v1 = reset {
 } * 2
 println(v1) // prints 16
 \end{lstlisting}
+\caption{Simple example directly processing the continuation at its only \texttt{shift} block.}
+\end{figure}
+
+Example \ref{fig:example_cps_step_by_step} shows the control flow throughout the \texttt{entire} reset block. Notice the similarity with multiple function calls.
+
+\begin{figure}[h!] \label{fig:example_cps_step_by_step}
+\begin{lstlisting}
+val result = reset {
+  println("entering first shift")
+  val firstShift = shift { k: (Int => Int) =>
+      val res = k(0)
+      println(s"exiting first shift, res = $res")
+      res
+  } + 1
+
+  println(s"firstShift = $firstShift; entering second shift")
+  val secondShift = shift { k: (Int => Int) =>
+      val res: Int = k(firstShift)
+      println(s"exiting second shift, res = $res")
+      res
+  } + 1
+  println(s"secondShift = $secondShift; returning the reset")
+
+  secondShift
+}
+
+println(s"result = $result")
+
+// entering first shift
+// firstShift = 1; entering second shift
+// secondShift = 2; returning the reset
+// exiting second shift, res = 2
+// exiting first shift, res = 2
+// result = 2
+\end{lstlisting}
+\caption{Example showing the control flow throughout the reset block when there is more than one shift block.}
+\end{figure}
+
+Example \ref{fig:example_cps_2} shows that the rest of the continuation may be called multiple times. In this case, the rest of the continuation is invoked three times. The final result of the continuation is multiplied by 2 outside the continuation (resulting in 20).
+
+\begin{figure}[h!] \label{fig:example_cps_2}
+\begin{lstlisting}
+val v2 = reset {
+  shift { k: (Int=>Int) =>
+    k(k(k(7)))
+  } + 1
+} * 2
+println(v2) // prints 20
+\end{lstlisting}
+\caption{Multiple invocation of the continuation in the \texttt{shift} block.}
+\end{figure}
+
+
 
 
 \subsection{Delimited Continuations by CPS-Transform}
