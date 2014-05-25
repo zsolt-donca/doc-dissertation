@@ -313,83 +313,112 @@ A delimited continuation embodies a certain part of the program. When invoking a
 
 Since the Scala CPS plugin uses compile-time transformation, applications using it do not need a special VM or other specific runtime support.
 
-There are typically two use cases of delimited continuations. In cases where the reset block returns a value, the continuation itself is typically runs to its end, with the return results being the primary meaning of the computation which is directly returned to the invoker of the \texttt{reset} block. This is similar to how an ordinary computation (without delimited continuations) would obtain its value. Functions that are to part of the continuation needs to be annotated with the annotation \texttt{@cpsParam[A, B]} (if the compiler cannot otherwise infer the annotation), where \texttt{A} is the \emph{current} answer type and \texttt{B} is the return type of the continuation.
+\subsection{\texttt{shift} and \texttt{reset}}
 
-In cases where the return type of the continuation is of type \texttt{Unit}, the continuation is only invoked for its \emph{side effect}. In this case, the state of the continuation is typically \emph{stored} somewhere in the system to be later executed, and the invoker of the \texttt{reset} block typically gets the control back before the rest of the continuation would be executed. In this case, the answer type is \texttt{Unit}, and the annotation \texttt{@cpsParam[Unit, Unit]} has its own alias in the form \texttt{@suspendable}.
+There are two control operators: \texttt{shift} and \texttt{reset}. The \texttt{reset} operator is followed by a code block which is the continuation itself. The \texttt{shift} blocks inside the continuation play a dual role: 
+\begin{itemize}
+\item they are in control of the rest of the continuation: the rest of the continuation is provided in the form of a function (denoted as \texttt{k} below), and the \texttt{shift} block can decide what to do with it: it may invoke it once, more than once, or never. Note that the rest of the continuation may include further \texttt{shift} blocks;
+\item the value returned in the \texttt{shift} block gets propagated back to the previous \texttt{shift} block (as the result of the function \texttt{k}), or, in case of the first \texttt{shift} block, back to the \texttt{reset} block itself.
+\end{itemize}
 
-\subsection{How it works}
+The value of the \texttt{reset} block is always equal to the return result of the very first \texttt{shift} block that gets executed in the continuation, or, in case no \texttt{shift} block gets executed, equal to the body of the \texttt{reset} block (see figure  \ref{fig:example_cps_no_shift}).
 
-The value of the reset block is always equal to the return result of the very first \texttt{shift} block that gets executed.
-
-\subsection{Examples}
-
-Example \ref{fig:example_cps_1} shows a simple numeric example. The value of the \texttt{reset} block is equal to the value of the \texttt{shift} block plus one. The \texttt{shift}, block gets the rest of the continuation in the form of the function \texttt{k}, which in this case is the function \(x + 1\). The shift block invokes \texttt{k} with the argument 7 and returns the resulting value 8, which is then the value of the \texttt{reset} block. This value is then multiplied by 2 (outside the continuation), so the printed value is 16.
-
-\begin{figure}[h!] \label{fig:example_cps_1}
+\begin{figure}[h!] 
 \begin{lstlisting}
-val v1 = reset {
-  shift { k: (Int=>Int) =>
-    k(7)
-  } + 1
-} * 2
-println(v1) // prints 16
+val simple: Int = reset {
+  val a = 40
+  val b = 2
+  a + b
+}
+println(simple) // 42
 \end{lstlisting}
-\caption{Simple example directly processing the continuation at its only \texttt{shift} block.}
+\caption{No \texttt{shift} block - the continuation is executed sequentially.}
+\label{fig:example_cps_no_shift}
 \end{figure}
 
-Example \ref{fig:example_cps_step_by_step} shows the control flow throughout the \texttt{entire} reset block. Notice the similarity with multiple function calls.
+Figure \ref{fig:example_cps_generic} shows a simple \texttt{reset} block with a single \texttt{shift} block inside and also shows an equivalent manually transformed version of the same continuation. In this example, the shift block invokes the rest of the continuation, which in the \(x+4\) function, with the argument 1, modifies the result by adding 7 to it, and returns the result (12). Because this is the only \texttt{shift} block in the continuation, the returned value is the result of the \texttt{reset} block.
 
-\begin{figure}[h!] \label{fig:example_cps_step_by_step}
+\begin{figure}[h!]
+ 
+\begin{tabular}{ C{7cm}  C{8cm}}
+
 \begin{lstlisting}
 val result = reset {
-  println("entering first shift")
-  val firstShift = shift { k: (Int => Int) =>
-      val res = k(0)
-      println(s"exiting first shift, res = $res")
-      res
-  } + 1
-
-  println(s"firstShift = $firstShift; entering second shift")
-  val secondShift = shift { k: (Int => Int) =>
-      val res: Int = k(firstShift)
-      println(s"exiting second shift, res = $res")
-      res
-  } + 1
-  println(s"secondShift = $secondShift; returning the reset")
-
-  secondShift
+  val s = shift {
+    k: (Int => Int) =>
+      k(1) + 7
+  }
+  s + 4
 }
-
-println(s"result = $result")
-
-// entering first shift
-// firstShift = 1; entering second shift
-// secondShift = 2; returning the reset
-// exiting second shift, res = 2
-// exiting first shift, res = 2
-// result = 2
+println(result) // prints 12
 \end{lstlisting}
-\caption{Example showing the control flow throughout the reset block when there is more than one shift block.}
-\end{figure}
-
-Example \ref{fig:example_cps_2} shows that the rest of the continuation may be called multiple times. In this case, the rest of the continuation is invoked three times. The final result of the continuation is multiplied by 2 outside the continuation (resulting in 20).
-
-\begin{figure}[h!] \label{fig:example_cps_2}
+&
 \begin{lstlisting}
-val v2 = reset {
-  shift { k: (Int=>Int) =>
-    k(k(k(7)))
-  } + 1
-} * 2
-println(v2) // prints 20
+val reset = {
+  val shift: ((Int => Int) => Int) = {
+    k: (Int => Int) =>
+      k(1) + 7
+  }
+  val rest: (Int => Int) = {
+    s: Int =>
+      s + 4
+  }
+  shift(rest)
+}
+println(reset) // prints 12
 \end{lstlisting}
-\caption{Multiple invocation of the continuation in the \texttt{shift} block.}
+\\
+\end{tabular}
+\caption{Left is a delimited continuation, and right is the equivalent manually-transformed CPS versions.}
+\label{fig:example_cps_generic}
 \end{figure}
 
+\subsubsection{Answer type modification}
+
+The Scala CPS plugin allows full answer type polymorphism in a statically type-safe manner. This allows the return type of the \texttt{reset} block (the type of the last expression in the block) and the return type of the individual \texttt{shift} blocks to be different. The transformation accurately tracks answer-type modification throughout the continuation and ensures, in compile time, that no type errors can occur in runtime (u.i. if the continuation can possibly run through path of conflicting answer types, the compilation fails with error.)
+
+Figure \ref{fig:example_cps_answer_type_modification} shows a simple an example where answer-type modification takes place. The type of the entire continuation is \texttt{String}, the answer type of the \texttt{reset} block is \texttt{Int}, and the answer type is modified in the \texttt{shift} block from \texttt{Int} to \texttt{String}. Note that even though the \texttt{shift} block's body returns a \texttt{String} (which the final answer type of the continuation), the actual type of the \texttt{shift} \emph{expression} is a third type \texttt{Char}, which corresponds to the input type of the function \texttt{k}.
+
+\begin{figure}[h!] 
+\begin{lstlisting}
+def charToHexString(char: Char): String = {
+  reset {
+    val c: Char = shift {
+      k: (Char => Int) =>
+        val num: Int = k(char)
+        "0x%02x".format(num) // Int to String (hex code)
+    }
+    c.toInt // converts Char to Int
+  }
+}
+println(charToHexString('A'))
+\end{lstlisting}
+\caption{An example showing answer type modification: the continuation's type is \texttt{String} even though the \texttt{reset} block's body returns \texttt{Int}.}
+\label{fig:example_cps_answer_type_modification}
+\end{figure}
+
+\subsubsection{Dynamic control flow}
+
+Generally speaking, the continuation does not necessarily has to consist of a single block that the compiler can understand entirely. It is possible to have \texttt{shift} blocks defined in methods or functions, and thus the \texttt{shift} blocks to be associated only in runtime with a certain \texttt{reset} block. Since the final return type of the \texttt{reset} block is not necessarily reflected in a \texttt{shift} block at all (because of answer type polymorphism), the code containing such ``detached'' \texttt{shift} blocks \textbf{must} be annotated with the annotation \texttt{@cpsParam[B, C]} where \texttt{B} is the type of computation state after computation has executed, and before control is returned to the shift, and \texttt{C} is the eventual return type of this delimited computation. 
+
+Because the compiler needs to transform CPS code, non-CPS code cannot directly or indirectly call CPS-code. This can lead to awkward limitations, such as the inability to iterate through a sequence with a simple for-loop (the reason is that a for-loop is desugareted by the compiler to a \texttt{foreach} method call on the collection with the loop as a closure body being the argument). Code that needs to interact with CPS-code thus needs to be marked to CPS-code itself (by the annotation @cpsParam), but then such code can no longer be used by non-CPS code (even if it doesn't contain \texttt{shift} blocks). A reason is that a method returning the type \texttt{A} annotated with \texttt{@cpsParam[B,C]} is effectively transformed by the compiler to return the internal type \texttt{ControlContext[A,B,C]}. 
+
+Chapter \ref{chap:cps-examples} contains examples demonstrating the annotation @cpsParam.
+
+\subsection{Use cases}
+
+The paper \cite{CPSTransform} describes some academic use cases (Type-Safe printf, Direct-Style Monads, Concurrency Primitives, Actors, Functional Reactive Programming, Asynchronous IO). At the time of writing, the following widely available Scala libraries using delimited continuations were available:
+\begin{itemize}
+\item Akka Dataflow Concurrency --- Akka implements Oz-style dataflow concurrency by using a special API for \emph{Futures} that enables a complementary way of writing synchronous-looking code that in reality is asynchronous. \cite{AkkaDataflow}
+\item Scala.React --- A reactive programming library for Scala developed based on \cite{DeprecatingObservers}.
+
+\end{itemize}
+
+%There are typically two use cases of delimited continuations. In cases where the \texttt{reset} block returns a value, the continuation itself is typically runs to its end, with the return results being the primary meaning of the computation which is directly returned to the invoker of the \texttt{reset} block. This is similar to how an ordinary computation (without delimited continuations) would obtain its value.
+
+%In cases where the return type of the continuation is of type \texttt{Unit}, the continuation is only invoked for its \emph{side effect}. In this case, the state of the continuation is typically \emph{stored} somewhere in the system to be later executed, and the invoker of the \texttt{reset} block typically gets the control back before the rest of the continuation would be executed. In this case, the answer type is \texttt{Unit}, and the annotation \texttt{@cpsParam[Unit, Unit]} has its own alias in the form \texttt{@suspendable}.
 
 
-
-\subsection{Delimited Continuations by CPS-Transform}
 
 \section{Scala-React}\label{sec:scala-react}
 

@@ -133,6 +133,13 @@ Assoc. prof. dr. Lehel Csató
 %\setcounter{secnumdepth}{3}
 %\setcounter{tocdepth}{3}
 
+% experimentary tabular stuff
+
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
 
 
 \begin{document}
@@ -170,6 +177,9 @@ This work is the result of my own activity. I have neither given nor received un
 \include{f_introduction}
 \include{f_theory}
 \include{f_implementation}
+
+\appendix
+\include{f_examples}
 
 
 { \renewcommand{\baselinestretch}{0.8}\normalsize %
