@@ -305,6 +305,22 @@ This syntactic flexibility allows domain-specific languages to be defined in Sca
 
 \subsection{Delimited continuations}
 
+
+
+
+\section{Scala-swing}
+
+Scala-swing is a UI library written in Scala that wraps the Java Swing components with the purpose of providing a simpler, more straightforward and typesafe interface that is more natural to use in Scala. It is meant to be sufficiently close to the Java Swing to appeal to Java programmers with existing Swing experience.\cite{ScalaSwing} The library diverges significantly from Java Swing only on parts that are considered as bad design decisions of Java Swing.
+
+The library provides lightweight wrappers around Swing components, maintaining their functionality and hierarchy, reimplementing them in Scala-like terms (using Scala properties instead of getter/setter methods, using enumerations instead of magic constants, and providing a typesafe API for objects like JList). The main divergences are the following:
+\begin{itemize}
+\item In Java Swing all components are also containers. This doesn't make sense for a number of components (e.g. TextField, CheckBox, Button etc.) This is likely to be because of the lack of multiple inheritance in Java. Scala-swing uses the \emph{trait} \texttt{Container}.
+
+\item Layout managers and panels are coupled, though they are decoupled in Java Swing. Scala-swing offers a straightforward, typesafe API for the standard Swing layout managers in the form of a panel class for each layout (e.g. \texttt{BorderPanel} for a \texttt{JPanel} with \texttt{BorderLayout}).
+
+\item The event mechanism is completely reworked around the concept of publishers and reactors. This offers a more homogeneous API for event management than what Java Swing offers.
+\end{itemize}
+
 \section{Scala CPS Plugin}
 
 Delimited continuations are a versatile programming tool. Their most important use is based on their ability to suspend and resume sequential code paths in a controlled way. The Scala CPS plugin is a compiler plugin that enables the programmer to have delimited continuations in direct-style code, without much syntactic overhead. This is implemented by the plugin selectively transforming the source code in compile time, driven by annotations and other structures placed into the code by the programmer. Multiple variants of delimited continuations have been described in the literature, and the Scala CPS plugin implements the so-called Danvy and Filinski model, with two primitive operations, \texttt{shift} and \texttt{reset}.

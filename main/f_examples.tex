@@ -1,9 +1,7 @@
 
 \chapter{Scala CPS plugin examples}\label{chap:cps-examples}
 
-Example \ref{fig:example_cps_1} shows a simple numeric example. The value of the \texttt{reset} block is equal to the value of the \texttt{shift} block plus one. The \texttt{shift}, block gets the rest of the continuation in the form of the function \texttt{k}, which in this case is the function \(x + 1\). The shift block invokes \texttt{k} with the argument 7 and returns the resulting value 8, which is then the value of the \texttt{reset} block. This value is then multiplied by 2 (outside the continuation), so the printed value is 16.
-
-\begin{figure}[h!] \label{fig:example_cps_1}
+\begin{figure}[h!]
 \begin{lstlisting}
 val v1 = reset {
   shift { k: (Int=>Int) =>
@@ -12,12 +10,30 @@ val v1 = reset {
 } * 2
 println(v1) // prints 16
 \end{lstlisting}
-\caption{Simple example directly processing the continuation at its only \texttt{shift} block.}
+\caption{A simple numeric example. The value of the \texttt{reset} block is equal to the value of the \texttt{shift} block plus one. The \texttt{shift}, block gets the rest of the continuation in the form of the function \texttt{k}, which in this case is the function \(x + 1\). The shift block invokes \texttt{k} with the argument 7 and returns the resulting value 8, which is then the value of the \texttt{reset} block. This value is then multiplied by 2 (outside the continuation), so the printed value is 16.}
+\label{fig:example_cps_1}
 \end{figure}
 
-Example \ref{fig:example_cps_step_by_step} shows the control flow throughout the \texttt{entire} reset block. Notice the similarity with multiple function calls.
 
-\begin{figure}[h!] \label{fig:example_cps_step_by_step}
+
+
+\begin{figure}[h!]
+\begin{lstlisting}
+val v2 = reset {
+  shift { k: (Int=>Int) =>
+    k(k(k(7)))
+  } + 1
+} * 2
+println(v2) // prints 20
+\end{lstlisting}
+\caption{Example showing that the rest of the continuation may be called multiple times. In this case, the rest of the continuation is invoked three times. The final result of the continuation is multiplied by 2 outside the continuation (resulting in the value 20).}
+\label{fig:example_cps_2}
+\end{figure}
+
+
+
+
+\begin{figure}[h!] 
 \begin{lstlisting}
 val result = reset {
   println("entering first shift")
@@ -47,21 +63,71 @@ println(s"result = $result")
 // exiting first shift, res = 2
 // result = 2
 \end{lstlisting}
-\caption{Example showing the control flow throughout the reset block when there is more than one shift block.}
+\caption{Example showing the control flow throughout the reset block when there is more than one shift block. Notice the similarity with multiple function calls.}
+\label{fig:example_cps_step_by_step}
 \end{figure}
 
-Example \ref{fig:example_cps_2} shows that the rest of the continuation may be called multiple times. In this case, the rest of the continuation is invoked three times. The final result of the continuation is multiplied by 2 outside the continuation (resulting in 20).
 
-\begin{figure}[h!] \label{fig:example_cps_2}
+
+\begin{figure}[h!] 
 \begin{lstlisting}
-val v2 = reset {
-  shift { k: (Int=>Int) =>
-    k(k(k(7)))
-  } + 1
-} * 2
-println(v2) // prints 20
+import scala.util.continuations._
+
+object TwelveDaysOfChristmas extends App {
+  val daysAndGifts = Seq(
+    ("First", "a Patridge in a Pear Tree"),
+    ("Second", "Two Turtle Doves"),
+    ("Third", "Three French Hens")
+  )
+  val days = daysAndGifts.map(_._1)
+  val gifts = daysAndGifts.map(_._2)
+
+  val carol: List[String] = reset {
+    val dayIndex: Int = shift {
+      verse: (Int => List[String]) =>
+        (0 to days.length - 1).foldRight(List.empty[String])((day, list) => "" :: verse(day) ::: list)
+    }
+
+    // the continuation below this line calculated a single verse for the day identified by `dayIndex`
+    val dayLine = s"On the ${days(dayIndex)} day of Christmas my true love sent to me"
+    val giftIndex: Int = shift {
+      line: (Int => String) =>
+        dayLine :: (0 to dayIndex).foldLeft(List.empty[String])((list, gift) => line(gift) :: list)
+    }
+
+    // the continuation below this line calculates a single line of a verse, the line identified by `giftIndex`
+
+    val gift = gifts(giftIndex)
+    val line = if (dayIndex == 0) {
+      s"$gift."
+    } else if (giftIndex > 0) {
+      s"$gift,"
+    } else {
+      s"and $gift."
+    }
+    line
+  }
+  carol.foreach(println(_))
+
+  /*
+  On the First day of Christmas my true love sent to me
+  a Patridge in a Pear Tree.
+
+  On the Second day of Christmas my true love sent to me
+  Two Turtle Doves,
+  and a Patridge in a Pear Tree.
+
+  On the Third day of Christmas my true love sent to me
+  Three French Hens,
+  Two Turtle Doves,
+  and a Patridge in a Pear Tree.  */
+}
 \end{lstlisting}
-\caption{Multiple invocation of the continuation in the \texttt{shift} block.}
+\caption{An example printing the first three verses of the well-known Christmas carol ``The Twelve Days of Christmas''. Notice the answer type modification.}
+\label{fig:example_twelve_days}
 \end{figure}
+
+
+
 
 
