@@ -143,6 +143,7 @@ import scala.swing._
 object ContinuationsSwingApp extends SimpleSwingApplication {
 
   var continue: (Unit => Unit) = { _ => run()}
+
   def run() {
     reset {
       val first = ask("What is your first name?")
@@ -151,13 +152,7 @@ object ContinuationsSwingApp extends SimpleSwingApplication {
     }
   }
 
-  val textField = new TextArea(10, 40)
-  val label = new Label("Welcome to the demo app")
-  val button = new Button(new Action("Next") {
-    override def apply(): Unit = continue()
-  })
-
-  def ask(prompt: String): String @cpsParam[Unit, Unit] = {
+  def ask(prompt: String): String@cpsParam[Unit, Unit] = {
     label.text = prompt
     shift {
       k: (Unit => Unit) => {
@@ -166,6 +161,12 @@ object ContinuationsSwingApp extends SimpleSwingApplication {
     }
     textField.text
   }
+
+  val textField = new TextArea(10, 40)
+  val label = new Label("Welcome to the demo app")
+  val button = new Button(new Action("Next") {
+    override def apply(): Unit = continue()
+  })
 
   override def top: swing.Frame = new MainFrame {
     contents = new BorderPanel {
@@ -182,11 +183,11 @@ object ContinuationsSwingApp extends SimpleSwingApplication {
 
         \begin{tabular}{c}
 Step1:\\
-\includegraphics[width=0.9\linewidth]{images/swing-demo-step1.png} \\[1cm] 
+\includegraphics[width=0.9\linewidth]{images/swing-demo-step1.png} \\[0.7cm] 
 Step2:\\
-\includegraphics[width=0.9\linewidth]{images/swing-demo-step2.png} \\[1cm]
+\includegraphics[width=0.9\linewidth]{images/swing-demo-step2.png} \\[0.7cm]
 Step3:\\
-\includegraphics[width=0.9\linewidth]{images/swing-demo-step3.png} \\[1cm]
+\includegraphics[width=0.9\linewidth]{images/swing-demo-step3.png} \\[0.7cm]
 Step4:\\
 \includegraphics[width=0.9\linewidth]{images/swing-demo-step4.png} \\
 \end{tabular}
