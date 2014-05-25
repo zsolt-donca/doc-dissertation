@@ -131,3 +131,85 @@ object TwelveDaysOfChristmas extends App {
 
 
 
+
+\begin{figure}
+
+    \begin{minipage}{.7\linewidth}
+      \centering
+        \begin{lstlisting}
+import scala.util.continuations._
+import scala.swing._
+import scala.swing.BorderPanel.Position
+import scala.swing.event.MouseClicked
+
+object ContinuationsSwingApp extends SimpleSwingApplication {
+  override def top: swing.Frame = new MainFrame {
+    contents = new BorderPanel {
+      val button = new Button("Next")
+      add(button, Position.South)
+
+      val textField = new TextArea(10, 40)
+      add(textField, Position.Center)
+
+      val label = new Label("Welcome to the demo app")
+      add(label, Position.North)
+
+      listenTo(button.mouse.clicks)
+      reactions += {
+        case MouseClicked(_, _, _, _, _) => eventHandler()
+      }
+
+      var eventHandler: (Unit => Unit) = { _ => run()}
+
+      def run() {
+        reset {
+          val firstName = getResponse("What is your first name?")
+          val lastName = getResponse("What is your last name?")
+          label.text = s"Hello, $firstName $lastName!"
+        }
+      }
+
+      def getResponse(prompt: String): String@cpsParam[Unit, Unit] = {
+        label.text = prompt
+        shift {
+          k: (Unit => Unit) => {
+            eventHandler = k
+          }
+        }
+        textField.text
+      }
+    }
+  }
+}
+\end{lstlisting}
+    \end{minipage}%
+    \begin{minipage}{.3\linewidth}
+      \centering
+
+        \begin{tabular}{c}
+Step1:\\
+\includegraphics[width=0.9\linewidth]{images/swing-demo-step1.png} \\[1cm] 
+Step2:\\
+\includegraphics[width=0.9\linewidth]{images/swing-demo-step2.png} \\[1cm]
+Step3:\\
+\includegraphics[width=0.9\linewidth]{images/swing-demo-step3.png} \\[1cm]
+Step4:\\
+\includegraphics[width=0.9\linewidth]{images/swing-demo-step4.png} \\
+\end{tabular}
+
+    \end{minipage} 
+
+
+\caption{A simple Scala-swing application with an asynchronous event-based control flow defined in a direct style.}
+\label{fig:example_twelve_days}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
