@@ -1,111 +1,10 @@
 
 \chapter{Theoretical background}\label{chap:theory}
 
-\section{FEST-Swing}\label{sec:fest-swing}
-
-FEST (Fixtures for Easy Software Testing) is a collection of libraries whose mission is to simplify software testing. It is composed of various modules, which can be used with TestNG or JUnit. The most significant module is the FEST-Swing module.
-
-The Swing module provides a simple and intuitive API for functional testing of Swing user interfaces, resulting in tests that are compact, easy to write, and read like a specification. Tests written using FEST-Swing are also robust. FEST simulates actual user gestures at the operating system level, ensuring that the application will behave correctly in front of the user. It also provides a reliable mechanism for GUI component lookup that ensures that changes in the GUI's layout or look-and-feel will not break the tests \cite{FESTMain}.
-
-\subsection{Introduction}
-
-A FEST-Swing test is testing either individual frames (the building blocks of a UI), or entire Swing applications or Applets. FEST simulates actual user gestures (mouse movements, keys presses) at the operating system level, ensuring that during the application will behave in the same way as in the front of the user. It uses AWT Robot, which generates events in the platform's native input queue. Thus, the test needs to create the components and make them visible on the screen, and the tests will actually moves the mouse cursor, and not just only generates mouse move events.
-
-\subsection{Architecture}
-
-FEST Swing's component fixture architecture is separated into several layers (from bottom to top):
-\begin{enumerate}
-\item BasicRobot: Simulates a user interacting with a mouse and keyboard. It uses the AWT Robot to generate native input events.
-\item Component driver: This layer does all the ``heavy lifting.'' All interaction with a GUI component is done in this layer. It knows how to simulate events and check the state of a specific GUI component. For example, JComboBoxDriver knows how to simulate a user using a JComboBox (selecting a particular element) and how to verify the state of it (which element should be selected.)
-\item Component fixture: This layer sits on top of the driver. It provides a fluent interface to that and makes the API easier to write and read. Users of FEST write their GUI tests using fixtures, not drivers. There is one fixture per Swing component, and each fixture has the same name as the Swing component they can handle ending with ``Fixture.'' For example, a JButtonFixture knows how to simulate user interaction and verify state of a JButton. Fixtures can be considered the ``user interface'' of the FEST-Swing library.
-\end{enumerate}
-
-The architecture also supports extensions, so developers of application using custom Swing components can write their own fixtures and component drivers.
-
-\subsection{Example}
-
-Writers of GUI tests need to use the fixtures located in the package org.fest.swing.fixture. These fixtures provide specific methods to simulate user interaction with a GUI component and they provide assertion methods that verify the state of the GUI component. Although it is possible to work with the FEST BasicRobot directly, the BasicRobot is too low-level and requires considerably more code than the fixtures.
-
-As a concrete example, let us consider a very simple JFrame that contains a JTextField, a JLabel and a JButton, and component has its unique name. The expected behavior of this GUI is the following: when user clicks on the JButton, the text of the JTextField should be copied to the JLabel. (Figure \ref{fig:example_jframe}) 
-
-\begin{figure}[h!] \label{fig:example_jframe}  
-  \centering
-    \includegraphics[width=0.6\textwidth]{images/example_jframe.png}
-  \caption{A very simple JFrame that contains a JTextField, a JLabel and a JButton.}
-\end{figure}
-
-To the frame, the test's setup method needs to create the frame (in the EDT, delegating it with GuiActionRunner), create a fixture for it, and make it visible (Figure \ref{fig:example_setup_method}).
-
-\begin{figure}[h!] \label{fig:example_setup_method}
-\begin{lstlisting}
-protected def onSetUp() : Unit = {
-    val frame : MyFrame = GuiActionRunner.execute(new GuiQuery[MyFrame] {
-        protected def executeInEDT() : MyFrame = new MyFrame
-    })
-    window = new FrameFixture(robot, frame)
-    window.show() // shows the frame to test
-}
-\end{lstlisting}
-\caption{The setup method creating the frame and the fixture, and making it visible.}
-\end{figure}
-
-The test method can use the fixture to simulate a user interacting with a GUI in order to verify that such GUI behaves as we expect. The user interactions and the assertions in the test are fluent and simple. The method looks up the UI components by their unique names. (Figure \ref{fig:example_test_method})
-
-\begin{figure}[h!] \label{fig:example_test_method}
-\begin{lstlisting}
-@Test 
-def shouldCopyTextInLabelWhenClickingButton : Unit = {
-    window.textBox("textToCopy").enterText("Some random text")
-    window.button("copyButton").click()
-    window.label("copiedText").requireText("Some random text")
-}
-\end{lstlisting}
-\caption{The test method.}
-\end{figure}
-
-It is important to mention that besides testing individual components that build up an application, FEST-Swing also supports testing entire applications. In such cases, the first tests starts up the application with ApplicationLauncher that understands how to launch an application using its main method. Once the application is started, the test just needs to find the application's main window.
-
-\subsection{Threading model}
-
-The documentation of FEST-Swing strongly advises to respect Swing's threading rules \cite{OracleSwingThreading} both in the tests and in the tested application (this remains only an advice because Swing itself does not enforce thread safety). In short, the cardinal rule is the following: creation and access (both read and write) of Swing components should be done in the Event Dispatch Thread (EDT.) Since JUnit and TestNG tests do not run on the EDT, creation and any direct access in the tests to Swing components should be delegated to EDT via the utility class GuiActionRunner (or via other tools).
-
-To ensure that the threading rules are respected throughout the tests and the tested application, FEST Swing provides the class FailOnThreadViolationRepaintManager. It forces a test failure if access to Swing components is not performed on the EDT. However, it only detects component creation and writing, and is unable to detect read operations (component creation and writing triggers repaint events, but read does not).
-
-\subsection{Limitations}\label{sec:fest-swing-limitations}
-
-Because FEST-Swing is actually simulating user interaction, it needs an environment very similar to actual user environments: the tested application needs to be active and in focus, and needs to move the mouse. Therefore, that machine that the tests run on cannot be used for the entire duration of the tests. In addition, the tests probably fail whenever another applications unexpectedly gets the focus and covers the application's window (the mouse no longer clicks the correct application). This can become a burden because UI tests, by their nature, can take a significant amount of time to execute and especially when using agile development methods, it is preferable to run them frequently.
-
-Because of this, it is common to delegate the tests to Continuous Integration (CI) systems (e.g. Hudson/Jenkins, TeamCity etc.) When the CI platform is based Linux, BSD or UNIX-style operating systems, it is common that the server does not even have the X Window system, running applications with UI impossible. For this case, Xvfb offers a simple and straightforward solution \cite{FESTxvfb}.
-
-However, if the target platform is Windows, there are a whole set of issues, and the known solutions are problematic, and are very complicated and time consuming to setup. \cite{HudsonUnderWindows} \cite{Cacio_Tta_FEST}
-
-To overcome all of these limitations, OpenJDK's project Caciocavallo can be used \cite{Cacio_Tta_FEST} to provide a graphics stack for the Java VM that is completely independent from the environment, eliminating any need for platform-dependent setup for CI systems. It renders everything into a virtual screen (which is simply a BufferedImage object), and is driven solely by AWT Robot events. However, this also has its own limitations; the most important being that drag-and-drop \cite{IntroDnD} is unsupported, thus it needs certain workarounds (see \fullref{sec:simulated-dnd}).
-
-\section{User Action and Adapter design pattern}\label{sec:user-actions-adapters}
-
-The users using an application with a UI typically interact with it by executing a series of operations that change the application's state. These operations might themselves be consisting of multiple operations of the UI components, changing the UI's state and, indirectly, changing the application's internal state. UI test simulating the users can incorporate in their architecture the concept of separation: the tests can interact with a user action layer (consisting of the actions the user can do with the application), and the user actions can interact with an adapter layer that itself interacts with the UI components (e.g. by using FEST-Swing).
-
-The same separation applies to the tests' assertions: the tests assert the application's state through the user actions, and the user actions assert the UI's state, and thus, indirectly, assert the application's internal state.
-
-\subsection{Adapters}
-
-The adapters understand how to execute operations on the application by using the UI components. 
-
-For example, to create a new text file in an editor application supporting multiple types of files, the user typically needs to click on the File menu, then on the menu item New, and then on the sub-menu-item Text file. The combinations are usually limited (the submenu-item cannot be clicked without clicking the menu item first), and sometimes require some checking (if the File menu is already visible for whatever reason, the test should not click it again because that would only close the menu).
-
-These operations come from the functional specification of the application, and their implementation details are only dependent on the UI design. These operations can be structured into adapters, where each logically bound component group can have a corresponding Adapter class (e.g. FileMenuAdapter), where the methods are the operations (e.g. FileMenuAdapter\#clickNewTextFile()). The adapter class can have a fixture for each Swing component, and the methods can directly interact with them.
-
-This approach also leads to tests that are more resistant to UI changes, requiring less code change for each UI design change. For example, if the in the UI design of the above text editor the Text file menu item is moved directly into the File menu under the name New text file, only the appropriate adapter class needs to be modified, while all the tests using this operation are left unchanged. Whereas, if the code using the fixtures and clicking on the menu items was present in all the tests, such a change would need all the tests to be changed.
-
-\subsection {User actions}
-
-The user actions understand how to execute operations of the application by using the adapters. 
-
-For example, let us consider a case where the user wants to save the file in the current editor of an editor application with a new name. The user needs to click the Save as menu item, resulting in the appearance of a browser dialog. After that, he needs to enter the new file name into a text box, and then needs to click the OK button of the dialog, and finally wait for the dialog to disappear. In this case, the file menu can have an adapter; the file browser dialog can have an adapter; and using both of them in the same time in a given way can represent a user action. For example, the user actions related to the current edited document can be grouped into a user action class (EditorUserAction), and where the methods are the user actions (EditorUserAction.saveAs(newFileName)).
 
 \section{Scala}
 
-Scala is a general-purpose object-oriented and functional programming language that runs on the top of the JVM. Besides supporting all the standard OOP concepts (classes, inheritance, encapsulation etc.), Scala has full support for functional programming (including currying, pattern matching, algebraic data types, tail recursion, lazy initialization, immutability etc.) Scala has a unified type system (meaning that there is no distinction between primitives and classes), supports anonymous types, operator overloading, optional parameters, named parameters, string interpolation, and so on. All these put together, Scala enables a programmer to develop very concise and small programs.
+Scala is a general-purpose object-oriented and functional programming language that runs on the top of the JVM. Besides supporting all the standard OOP concepts (classes, inheritance, encapsulation etc.), Scala has full support for functional programming (including currying, pattern matching, algebraic data types, tail recursion, lazy initialization, immutability etc.) Scala has a unified type system (there is no distinction between primitives and classes), supports anonymous types, operator overloading, optional parameters, named parameters, string interpolation, and so on. All these put together, Scala enables a programmer to develop very concise and small programs.
 
 Scala and Java have commons roots. Scala's main designer and developer, Martin Odersky, is also known for developing the programming language \emph{Generic Java} (which, with the addition of wildcards, was integrated into \emph{Java 5}), and for the development of the current generation of \emph{javac}, the Java Compiler. Many of Scala's syntax elements were inspired by Java (e.g. the imperative control structures, operators). Many of Scala's design decisions were inspired by criticism over the shortcomings of Java.
 
@@ -121,7 +20,7 @@ object HelloWorldApp extends App {
 }
 \end{lstlisting}
 
-Note that contrary to a hello-world application in Java, there is no class declaration and no static main method declaration; instead, a singleton object is created with the keyword \texttt{object} whose body consists of the application. In order to be compatible with the JVM, a class with a method \texttt{static void main(String[])} is generated.
+Note that contrary to a hello-world application in Java, there is no class declaration and no static main method declaration; instead, a singleton object is created with the keyword \texttt{object} whose body consists of the application. \footnote{In order to be compatible with the JVM, the a method \texttt{static void main(String[])} is generated on the class}.
 
 A local variable or a field is declared with the keyword \texttt{val} or \texttt{var}. The keyword \texttt{val} is used for variables that are initialized only once and never change their value, and the keyword \texttt{var} is used for variables whose value changes during the execution. For example:
 
@@ -134,15 +33,14 @@ for (i <- 1 to end) {
 println(s"The sum of numbers between 1 and $end is $sum")
 \end{lstlisting}
 
-The following example defines a method that calculates the below expression:
+Of course, the above example can be written in a much more concise way in Scala, while avoiding looping and mutable state, using functional-style programming:
+\begin{lstlisting}
+val sum = (0 to 100).sum
+\end{lstlisting} 
 
-\[
-f(x) = 
-  \begin{cases}
-    \frac{1}{x^2} & \text{if } x \neq 0 \\
-    0 & \text{if } x = 0
-  \end{cases}
-\]
+This works because the method \texttt{sum} is defined on \emph{numeric} sequences.
+
+The following example defines a method that calculates the below expression \(\frac{1}{x^2}\) for \(x \neq 0\) and otherwise returns \(0\):
 
 \begin{lstlisting}
 def f(x: Double): Double = {
@@ -165,7 +63,7 @@ def f(x: Double) = {
 }
 \end{lstlisting}
 
-It is also possible to omit the return statement. This is because in Scala everything is an expression and thus has a value. The value of a block (delimited by the curly braces \texttt{\{\dots\}}), is equal to the value of the \emph{last} expression inside the block, and value of the statement \texttt{if (condition) <then-block> else <else-block>} statement is equal to either the value of the ``then-block'' block or the ``else-block'' block, depending on the condition. In Scala code, return statements are typically used only to control the execution flow of a method.
+It is also possible to omit the return statement. This is because in Scala there is no distinction between expressions and statement, such as \texttt{if}, \texttt{while}, \texttt{try \dots catch} and so on. In Scala, everything is an expression and thus has a value. The value of a block (delimited by the curly braces), is equal to the value of the \emph{last} expression inside the block, and value of the statement \texttt{if (condition) <then-block> else <else-block>} statement is equal to either the value of the ``then-block'' block or the ``else-block'' block, depending on the condition. In Scala code, return statements are typically used only to control the execution flow of a method.
 
 \subsection{Type system}
 
@@ -179,7 +77,7 @@ class C[typeParams](classParams) extends Superclass with Trait {
 }
 \end{lstlisting}
 
-With the exception of the class name, everything can be ommitted. A class may extend (or \emph{mix in}) multiple traits (which are similar to Java interfaces and abstract classes). The class parameters are Scala's equivalent of Java's constructor parameters.
+With the exception of the class name, everything can be omitted. A class may extend (or \emph{mix in}) multiple traits (similarly to interfaces and abstract classes in Java). The class parameters are Scala's equivalent of Java's constructor parameters.
 
 A class can be instantiated with the \texttt{new} operator, similar to Java.
 
@@ -285,11 +183,41 @@ In the above example, the method call parenthesis were omitted, and the block wa
 
 This syntactic flexibility allows domain-specific languages to be defined in Scala without the need to extend the compiler. For example, the library \emph{Scala-react} defines a custom control-flow language with the use of higher-order functions, by using extensively using \texttt{apply} and \texttt{update} methods, and by using infix method call syntax for operator methods.
 
-\subsubsection{immutability}
+\subsection{Immutability}
 
 \subsubsection{Implicit parameters}
 
 \subsection{Tail recursion}
+
+Tail call optimization is an optimization technique in which method invocation instructions are replaced with jump instructions when the method invocation is immediately followed by a return from the method, effectively meaning that the method call is the last expression in the method body. The purpose if this implementation is to avoid growing the stack unnecessarily, allowing long call chains that would otherwise run out of stack space. A simple example:
+
+\begin{lstlisting}
+def a(x: Int): Int = { 
+  val y = b*4
+  b(y) // calling b is the returned expression 
+} 
+def b(x: Int): Int = { x + 2 }
+\end{lstlisting} 
+
+A special case of tail call optimization is \emph{tail recursion}, where the method being called might lead to invoking the same method again: it's either a direct call to the very same method (direct tail recursion), or an indirect call which will result in the method being called again (mutual tail recursion). Tail recursion plays an important part of functional programming as it allows the using of recursive method calls instead of loops.
+
+Scala only offers direct tail recursion, which is realized in compiler-time. The reason is that the JVM does not support mutual tail recursion or tail call optimization - a feat that needs runtime support.\footnote{Note that this is particular to the JVM only --- the language F\# running on top of the .NET CLR \emph{does} have tail call optimization}
+
+\begin{figure}[h!] 
+\begin{lstlisting}
+def factorial(n: Int): Int = {
+  @tailrec def factorialAcc(acc: Int, n: Int): Int = {
+    if (n <= 1) acc
+    else factorialAcc(n * acc, n - 1)
+  }
+  factorialAcc(1, n)
+}
+\end{lstlisting}
+\caption{Calculating factorial using tail recursion.}
+\label{fig:example_scala_tailrec}
+\end{figure}
+
+Figure \ref{fig:example_scala_tailrec} illustrates...
 
 \subsection{Functions as types}
 \subsubsection{higher order functions}
@@ -496,12 +424,9 @@ Events and signals are very tightly related concepts. They are both \emph{reacti
 
 One of the most important issues with having to deal with observer-based architecture is the \emph{inversion of control}. When an operation consisting of multiple events needs to be modeled, the typical solution is to model it as a \emph{state machine}. 
 
-Let us consider a simple drawing application that lets us draw a closed line using the mouse:
-\begin{lstlisting}
-val mouseDown: Events[Pos]
-val mouseMove: Events[Pos]
-val mouseUp: Events[Pos]
+Let us consider a simple drawing application that lets us draw a closed line using the mouse (variables \texttt{mouseDown}, \texttt{mouseMove} and \texttt{mouseUp} are event sources):
 
+\begin{lstlisting}
 var moveObserver: Observer = null
 var path: Path = null
 observe(mouseDown) {
@@ -594,6 +519,107 @@ Signal \texttt{s} should ideally ever depend on only two signal: on signal \text
 
 
 
+\section{FEST-Swing}\label{sec:fest-swing}
+
+FEST (Fixtures for Easy Software Testing) is a collection of libraries whose mission is to simplify software testing. It is composed of various modules, which can be used with TestNG or JUnit. The most significant module is the FEST-Swing module.
+
+The Swing module provides a simple and intuitive API for functional testing of Swing user interfaces, resulting in tests that are compact, easy to write, and read like a specification. Tests written using FEST-Swing are also robust. FEST simulates actual user gestures at the operating system level, ensuring that the application will behave correctly in front of the user. It also provides a reliable mechanism for GUI component lookup that ensures that changes in the GUI's layout or look-and-feel will not break the tests \cite{FESTMain}.
+
+\subsection{Introduction}
+
+A FEST-Swing test is testing either individual frames (the building blocks of a UI), or entire Swing applications or Applets. FEST simulates actual user gestures (mouse movements, keys presses) at the operating system level, ensuring that during the application will behave in the same way as in the front of the user. It uses AWT Robot, which generates events in the platform's native input queue. Thus, the test needs to create the components and make them visible on the screen, and the tests will actually moves the mouse cursor, and not just only generates mouse move events.
+
+\subsection{Architecture}
+
+FEST Swing's component fixture architecture is separated into several layers (from bottom to top):
+\begin{enumerate}
+\item BasicRobot: Simulates a user interacting with a mouse and keyboard. It uses the AWT Robot to generate native input events.
+\item Component driver: This layer does all the ``heavy lifting.'' All interaction with a GUI component is done in this layer. It knows how to simulate events and check the state of a specific GUI component. For example, JComboBoxDriver knows how to simulate a user using a JComboBox (selecting a particular element) and how to verify the state of it (which element should be selected.)
+\item Component fixture: This layer sits on top of the driver. It provides a fluent interface to that and makes the API easier to write and read. Users of FEST write their GUI tests using fixtures, not drivers. There is one fixture per Swing component, and each fixture has the same name as the Swing component they can handle ending with ``Fixture.'' For example, a JButtonFixture knows how to simulate user interaction and verify state of a JButton. Fixtures can be considered the ``user interface'' of the FEST-Swing library.
+\end{enumerate}
+
+The architecture also supports extensions, so developers of application using custom Swing components can write their own fixtures and component drivers.
+
+\subsection{Example}
+
+Writers of GUI tests need to use the fixtures located in the package org.fest.swing.fixture. These fixtures provide specific methods to simulate user interaction with a GUI component and they provide assertion methods that verify the state of the GUI component. Although it is possible to work with the FEST BasicRobot directly, the BasicRobot is too low-level and requires considerably more code than the fixtures.
+
+As a concrete example, let us consider a very simple JFrame that contains a JTextField, a JLabel and a JButton, and component has its unique name. The expected behavior of this GUI is the following: when user clicks on the JButton, the text of the JTextField should be copied to the JLabel. (Figure \ref{fig:example_jframe}) 
+
+\begin{figure}[h!] \label{fig:example_jframe}  
+  \centering
+    \includegraphics[width=0.6\textwidth]{images/example_jframe.png}
+  \caption{A very simple JFrame that contains a JTextField, a JLabel and a JButton.}
+\end{figure}
+
+To the frame, the test's setup method needs to create the frame (in the EDT, delegating it with GuiActionRunner), create a fixture for it, and make it visible (Figure \ref{fig:example_setup_method}).
+
+\begin{figure}[h!] \label{fig:example_setup_method}
+\begin{lstlisting}
+protected def onSetUp() : Unit = {
+    val frame : MyFrame = GuiActionRunner.execute(new GuiQuery[MyFrame] {
+        protected def executeInEDT() : MyFrame = new MyFrame
+    })
+    window = new FrameFixture(robot, frame)
+    window.show() // shows the frame to test
+}
+\end{lstlisting}
+\caption{The setup method creating the frame and the fixture, and making it visible.}
+\end{figure}
+
+The test method can use the fixture to simulate a user interacting with a GUI in order to verify that such GUI behaves as we expect. The user interactions and the assertions in the test are fluent and simple. The method looks up the UI components by their unique names. (Figure \ref{fig:example_test_method})
+
+\begin{figure}[h!] \label{fig:example_test_method}
+\begin{lstlisting}
+@Test 
+def shouldCopyTextInLabelWhenClickingButton : Unit = {
+    window.textBox("textToCopy").enterText("Some random text")
+    window.button("copyButton").click()
+    window.label("copiedText").requireText("Some random text")
+}
+\end{lstlisting}
+\caption{The test method.}
+\end{figure}
+
+It is important to mention that besides testing individual components that build up an application, FEST-Swing also supports testing entire applications. In such cases, the first tests starts up the application with ApplicationLauncher that understands how to launch an application using its main method. Once the application is started, the test just needs to find the application's main window.
+
+\subsection{Threading model}
+
+The documentation of FEST-Swing strongly advises to respect Swing's threading rules \cite{OracleSwingThreading} both in the tests and in the tested application (this remains only an advice because Swing itself does not enforce thread safety). In short, the cardinal rule is the following: creation and access (both read and write) of Swing components should be done in the Event Dispatch Thread (EDT.) Since JUnit and TestNG tests do not run on the EDT, creation and any direct access in the tests to Swing components should be delegated to EDT via the utility class GuiActionRunner (or via other tools).
+
+To ensure that the threading rules are respected throughout the tests and the tested application, FEST Swing provides the class FailOnThreadViolationRepaintManager. It forces a test failure if access to Swing components is not performed on the EDT. However, it only detects component creation and writing, and is unable to detect read operations (component creation and writing triggers repaint events, but read does not).
+
+\subsection{Limitations}\label{sec:fest-swing-limitations}
+
+Because FEST-Swing is actually simulating user interaction, it needs an environment very similar to actual user environments: the tested application needs to be active and in focus, and needs to move the mouse. Therefore, that machine that the tests run on cannot be used for the entire duration of the tests. In addition, the tests probably fail whenever another applications unexpectedly gets the focus and covers the application's window (the mouse no longer clicks the correct application). This can become a burden because UI tests, by their nature, can take a significant amount of time to execute and especially when using agile development methods, it is preferable to run them frequently.
+
+Because of this, it is common to delegate the tests to Continuous Integration (CI) systems (e.g. Hudson/Jenkins, TeamCity etc.) When the CI platform is based Linux, BSD or UNIX-style operating systems, it is common that the server does not even have the X Window system, running applications with UI impossible. For this case, Xvfb offers a simple and straightforward solution \cite{FESTxvfb}.
+
+However, if the target platform is Windows, there are a whole set of issues, and the known solutions are problematic, and are very complicated and time consuming to setup. \cite{HudsonUnderWindows} \cite{Cacio_Tta_FEST}
+
+To overcome all of these limitations, OpenJDK's project Caciocavallo can be used \cite{Cacio_Tta_FEST} to provide a graphics stack for the Java VM that is completely independent from the environment, eliminating any need for platform-dependent setup for CI systems. It renders everything into a virtual screen (which is simply a BufferedImage object), and is driven solely by AWT Robot events. However, this also has its own limitations; the most important being that drag-and-drop \cite{IntroDnD} is unsupported, thus it needs certain workarounds (see \fullref{sec:simulated-dnd}).
+
+\section{User Action and Adapter design pattern}\label{sec:user-actions-adapters}
+
+The users using an application with a UI typically interact with it by executing a series of operations that change the application's state. These operations might themselves be consisting of multiple operations of the UI components, changing the UI's state and, indirectly, changing the application's internal state. UI test simulating the users can incorporate in their architecture the concept of separation: the tests can interact with a user action layer (consisting of the actions the user can do with the application), and the user actions can interact with an adapter layer that itself interacts with the UI components (e.g. by using FEST-Swing).
+
+The same separation applies to the tests' assertions: the tests assert the application's state through the user actions, and the user actions assert the UI's state, and thus, indirectly, assert the application's internal state.
+
+\subsection{Adapters}
+
+The adapters understand how to execute operations on the application by using the UI components. 
+
+For example, to create a new text file in an editor application supporting multiple types of files, the user typically needs to click on the File menu, then on the menu item New, and then on the sub-menu-item Text file. The combinations are usually limited (the submenu-item cannot be clicked without clicking the menu item first), and sometimes require some checking (if the File menu is already visible for whatever reason, the test should not click it again because that would only close the menu).
+
+These operations come from the functional specification of the application, and their implementation details are only dependent on the UI design. These operations can be structured into adapters, where each logically bound component group can have a corresponding Adapter class (e.g. FileMenuAdapter), where the methods are the operations (e.g. FileMenuAdapter\#clickNewTextFile()). The adapter class can have a fixture for each Swing component, and the methods can directly interact with them.
+
+This approach also leads to tests that are more resistant to UI changes, requiring less code change for each UI design change. For example, if the in the UI design of the above text editor the Text file menu item is moved directly into the File menu under the name New text file, only the appropriate adapter class needs to be modified, while all the tests using this operation are left unchanged. Whereas, if the code using the fixtures and clicking on the menu items was present in all the tests, such a change would need all the tests to be changed.
+
+\subsection {User actions}
+
+The user actions understand how to execute operations of the application by using the adapters. 
+
+For example, let us consider a case where the user wants to save the file in the current editor of an editor application with a new name. The user needs to click the Save as menu item, resulting in the appearance of a browser dialog. After that, he needs to enter the new file name into a text box, and then needs to click the OK button of the dialog, and finally wait for the dialog to disappear. In this case, the file menu can have an adapter; the file browser dialog can have an adapter; and using both of them in the same time in a given way can represent a user action. For example, the user actions related to the current edited document can be grouped into a user action class (EditorUserAction), and where the methods are the user actions (EditorUserAction.saveAs(newFileName)).
 
 
 

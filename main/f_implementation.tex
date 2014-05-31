@@ -128,25 +128,6 @@ By doing the following steps, the tests can programmatically trigger drag-and-dr
 \item Trigger the import of the data (see point \ref{item:import-data} above).
 \end{enumerate}
 
-\section{Non-functional requirements}\label{sec:nfr}
-
-\subsection{Scala}\label{sec:nfr-scala}
-
-The language of choice for implementing the extension framework should be Scala. It offers advanced functional programming paradigms for the JVM platform, while keeping full compatibility and interoperability with Java systems. \cite{ScalaWiki}
-
-\subsection{Integration with Spring}\label{sec:nfr-spring}
-The extension framework should support tests built on Spring Framework, \cite{SpringWiki} the popular enterprise application framework. At least the configuration of the extension framework should be possible through the Spring context, and some or all of the features could be based on Spring's AOP services.
-
-\subsection{Integration with Maven}\label{sec:nfr-maven}
-
-The extension framework should support integration with Apache Maven, \cite{MavenWiki} the popular build automation tool.  The audit report should be integrated into the tests' standard surefire or failsafe reports. If the AspectJ-based features of the extension framework need any additional pre-compilation steps or advanced classpath configuration, they should also be implemented by custom Maven plugins integrating into the corresponding Maven lifecycle phases.
-
-\section{Scala Commander}\label{sec:scala-commander}
-
-Scala Commander is an application developed to demonstrate the capabilities of FEST-Logging. It is a simple Swing-based file manager application developed in Scala, with a reactive user interface that was implemented using the Scala library \emph{Scala-React}. Scala-React is described by the article \emph{Deprecating the Observer Pattern with Scala.React}\cite{DeprecatingObservers}.
-
-
-
 
 
 
