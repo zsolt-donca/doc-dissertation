@@ -415,18 +415,18 @@ println(charToHexString('A'))
 
 \subsubsection{Dynamic control flow}
 
-Generally speaking, the continuation does not necessarily has to consist of a single block that the compiler can understand entirely. It is possible to have \texttt{shift} blocks defined in methods or functions, and thus the \texttt{shift} blocks to be associated only in runtime with a certain \texttt{reset} block. Since the final return type of the \texttt{reset} block is not necessarily reflected in a \texttt{shift} block at all (because of answer type polymorphism), the code containing such ``detached'' \texttt{shift} blocks \textbf{must} be annotated with the annotation \texttt{@cpsParam[B, C]} where \texttt{B} is the type of computation state after computation has executed, and before control is returned to the shift, and \texttt{C} is the eventual return type of this delimited computation. 
+A delimited continuation does not has to consist of a single block that the compiler can understand entirely. It is possible to have \texttt{shift} blocks defined in methods or functions, and thus the \texttt{shift} blocks to be associated only in runtime with a certain \texttt{reset} block. Since the final return type of the \texttt{reset} block is not necessarily reflected in a \texttt{shift} block at all (because of answer type polymorphism), the code containing such ``detached'' \texttt{shift} blocks \textbf{must} be annotated with the annotation \texttt{@cpsParam[B, C]} where \texttt{B} is the type of computation state after computation has executed, and before control is returned to the shift, and \texttt{C} is the eventual return type of this delimited computation. 
 
-Because the compiler needs to transform CPS code, non-CPS code cannot directly or indirectly call CPS-code. This can lead to awkward limitations, such as the inability to iterate through a sequence with a simple for-loop (the reason is that a for-loop is desugareted by the compiler to a \texttt{foreach} method call on the collection with the loop as a closure body being the argument). Code that needs to interact with CPS-code thus needs to be marked to CPS-code itself (by the annotation @cpsParam), but then such code can no longer be used by non-CPS code (even if it doesn't contain \texttt{shift} blocks). A reason is that a method returning the type \texttt{A} annotated with \texttt{@cpsParam[B,C]} is effectively transformed by the compiler to return the internal type \texttt{ControlContext[A,B,C]}. 
+Because the compiler needs to transform CPS code, non-CPS code cannot (neither directly nor indirectly) call CPS-code. This can lead to awkward limitations, such as the inability to iterate through a sequence with a simple for-loop (the reason is that a for-loop is desugareted by the compiler to a \texttt{foreach} method call on the collection with the loop as a closure body being the argument). Code that needs to interact with CPS-code thus needs to be marked to CPS-code itself (by the annotation @cpsParam), but then such code can no longer be used by non-CPS code (even if it doesn't contain \texttt{shift} blocks). A reason is that a method returning the type \texttt{A} annotated with \texttt{@cpsParam[B,C]} is effectively transformed by the compiler to return the internal type \texttt{ControlContext[A,B,C]}. 
 
-Chapter \ref{chap:cps-examples} contains examples demonstrating the annotation @cpsParam.
+\fullref{chap:cps-examples} contains examples demonstrating the annotation @cpsParam.
 
 \subsection{Use cases}
 
 The paper \cite{CPSTransform} describes some academic use cases (Type-Safe printf, Direct-Style Monads, Concurrency Primitives, Actors, Functional Reactive Programming, Asynchronous IO). At the time of writing, the following widely available Scala libraries using delimited continuations were available:
 \begin{itemize}
 \item Akka Dataflow Concurrency --- Akka implements Oz-style dataflow concurrency by using a special API for \emph{Futures} that enables a complementary way of writing synchronous-looking code that in reality is asynchronous. \cite{AkkaDataflow}
-\item Scala.React --- A reactive programming library for Scala developed based on \cite{DeprecatingObservers}.
+\item Scala.React --- A reactive programming library for Scala developed based on the paper \cite{DeprecatingObservers}.
 
 \end{itemize}
 
@@ -442,7 +442,7 @@ Programming systems with interactive user interfaces requires a considerable amo
 
 \subsection{Event streams}
 
-The base of simplifying the event logic is a general interface, offering uniformity, abstraction and reusability. The class {\tt EventSource[A]} represents a generic source of events of type {\tt A}. It is possible to schedule an event source to emit a value at any time. Let is consider an example of an event source of type integer emitting two events:
+The base of simplifying the event logic is a general interface, offering uniformity, abstraction and reusability. The class {\tt EventSource[A]} represents a generic source of events of type {\tt A}. It is possible to schedule an event source to emit a value at any time. Let us consider an example of an event source of type integer emitting two events:
 \begin{lstlisting}
 val es = new EventSource[Int]
 es emit 1; es emit 2
@@ -453,11 +453,141 @@ We can print all events from the event source to the console as follows:
 val ob = observe(es) { x => println("Receiving " + x) }
 \end{lstlisting}
 
+In case of a UI application, we can have a button class that emits event each time the button is pressed. The values associated with the event might represent the click count:
+
+\begin{lstlisting}
+class Button(label: String) {
+  val clicks = new EventSource[Int]
+  // for each event coming from the UI component, call "clicks emit x"
+}
+\end{lstlisting}
+
+It is possible to listen to an event, and associate an action that needs to be executed when the event emits. In a UI application, we can have a ``Quit'' button that terminates the application.
+\begin{lstlisting}
+val quitButton = new Button("Quit")
+observe(quitButton.clicks) { _ => System.exit() }
+\end{lstlisting}
+
 \subsection{Signals}
 
-\subsection{Reactors}
+Many interactive application needs to deal with continuously changing values. Usually, changes made to internal variables needs to be reflected on the UI, possibly in more than one place. We can represent time-varying values by the type \texttt{Signal}. A signal is an observable object that has an associated value in any point of time. There are two main kind of signals: variables and functions (either strictly or lazily evaluated, see below).
 
-\subsubsection{Data-flow language}
+Let us consider a fragment of a file manager application that displays, in the form of a label, a text with the number of selected files and folders.
+
+\begin{lstlisting}
+val selectedFiles: Var[Int]
+val selectedFolders: Var[Int]
+val selection: Strict[String] { "There are " + selectedFiles() + " files(s) and " + selectedFolders() + " folder(s) selected".
+
+observe(selection) {
+  selectionStr => selectionLabel.text = selectionStr
+}
+\end{lstlisting}
+
+In the above example, whenever the number of selected files and folders changes, the signal \texttt{selection} is automatically evaluated, and the component on the UI is automatically updated. 
+
+In this example, the signal is \texttt{Strict}, which means that whenever the dependent signals (\texttt{selectedFiles} and \texttt{selectedFolders}) change their value, the signal is automatically re-evaluated. We need this because we always want to keep the UI updated. For cases where this is not necessary, we can use the type \texttt{Lazy} that represents a signal function that is evaluated only if needed. This means that an observer listening to such lazy signals might miss events.
+
+\subsection{Reactives}
+
+Events and signals are very tightly related concepts. They are both \emph{reactives}. The widely used method \texttt{observe} expects a reactive, therefore it possible to observe an event source or a signal the same way. The difference between them is only subtle: while a signal always has a defined value, and event source only has a value while it is \emph{emitting} (it does not store the value emitted last time). There are also operations that lets convert between the two: the trait \texttt{Signal[A]} defines the method \texttt{changes} that creates an event source for the current signal; and the trait \texttt{Events[A]} defines the method \texttt{hold} that creates a signal that always holds the values of current event (and has a given initial value).
+
+\subsection{Reactors: observers without inversion of control}
+
+One of the most important issues with having to deal with observer-based architecture is the \emph{inversion of control}. When an operation consisting of multiple events needs to be modeled, the typical solution is to model it as a \emph{state machine}. 
+
+Let us consider a simple drawing application that lets us draw a closed line using the mouse:
+\begin{lstlisting}
+val mouseDown: Events[Pos]
+val mouseMove: Events[Pos]
+val mouseUp: Events[Pos]
+
+var moveObserver: Observer = null
+var path: Path = null
+observe(mouseDown) {
+  downPos => 
+    path = new Path(downPos) // new path with a starting position
+    moveObserver = observe(mouseMove) {
+      movePos =>
+        path.add(movePos) // add the current position to the path
+        draw(path)
+    }
+}
+
+observe(mouseUp) {
+  _ =>
+    moveObserver.dispose()
+    path.close() // closes the path
+    draw(path)
+}
+\end{lstlisting}
+
+The above example has multiple fundamental issues. The drawing logic is inverted (scattered through three observer blocks), the observers needs to be manually disposed, and it is prone to errors (e.g. if a mouse up event is somehow triggered without a mouse down event, the code fails with a null-pointer runtime exceptions --- a defensive code would increase complexity).
+
+Ideally, we want to encode a state-machine that can be described informally as follows:
+\begin{enumerate}
+\item Once the mouse button is pressed, start a new path.
+\item While the mouse isn't released, gather all mouse moves and draw the path.
+\item Once the mouse is released, close and draw the path.
+\end{enumerate}
+
+Scala.React's imperative data-flow language and the concept of \emph{reactors} lets us turn the above steps into a straightforward implementation:
+
+\begin{lstlisting}
+Reactor.loop { self =>
+  val initialPos = self await mouseDown
+  val path = new Path(initialPos)
+  self.loopUntil(mouseUp) {
+    val movePos = self awaitNext mouseMove
+    path.add(movePos)
+    draw(path)
+  }
+  path.close()
+  draw(path)
+}
+\end{lstlisting}
+
+The method \texttt{Reactor.loop} creates a reactor that repeatedly executes the given block. The variable \texttt{self} lets us control the reactor, which supports actions such as \texttt{await}, \texttt{awaitNext} and \texttt{loopUntil}. The actions \texttt{await} and \texttt{awaitNext} pauses the reactor until the given event source emits; whenever it does emit, the reactor is resumed from exactly where it was paused, with all its internal state (e.g. \texttt{path}) restored. This is enabled by the Scala CPS plugin: the method \texttt{loop} contains a \texttt{reset} block, and the methods \texttt{await} and \texttt{awaitNext} contain a corresponding \texttt{shift} block that creates an observer on the given event source that resumes the continuation. For more details, see \ref{sec:scala-react-impl}.
+
+\subsection{Data-flow language}
+
+Scala-React's data-flow language has a series of operations on reactors that offers control over the reactor:
+\begin{itemize}
+\item \texttt{flow}: creates a new reactor with a control flow that is executed once;
+\item \texttt{loop}: creates a new reactor with a control flow that is repeatedly executed, until the reactor is disposed or the reactor calls the \texttt{join} method on itself;
+\item \texttt{await}: waits for the given reactive to emit; if it is already emitting in the current cycle, this method immediately returns;
+\item \texttt{awaitNext}: waits for the given reactive to emit; if it is already emitting, it discards the current value and awaits for the next;
+\item \texttt{pause}: suspends the reactor which will be continued in the next iteration --- useful to break infinite cycles in reactors or to run a have a long-running operation on the UI without completely blocking (freezing) it;
+\item \texttt{halt}: suspends and disposes the reactor;
+\item \texttt{par}: lets execute \emph{two} branches in \emph{parallel}, until they both finish or until or at least one calls the method \texttt{join}; useful in cases we want to have two related control flows that in control of each other;
+\item \texttt{join}: halts the reactor or controls the enclosing \texttt{par} expression;
+\item \texttt{abortOn}: discards a reactor block as soon as a given reactive emits; useful if we need a control flow that supports \emph{cancelling} of whatever action it is doing;
+\end{itemize}
+
+\subsection{Implementation details}\label{sec:scala-react-impl}
+
+Scala.React proceeds in discreet steps, called \emph{turns}. Part of the implementation is a \emph{scheduler} and a \emph{propagator}. External updates, such as when an event source is triggered, are forwarded to the scheduler which schedules a revalidation request for the next turn. In the next turn, the propagator takes over, and revalidates all related events and signals, possibly creating other turns (e.g. when there is a dependent signal on a signal being updated). This turn-by-turn evaluation strategy makes it possible that the system is always in a consistent state (e.g. it's \emph{glitch-free}). 
+
+\subsubsection{Signal expressions}
+
+Scala.React propagates changes and resolves dependencies using an internal representation of \emph{nodes} forming a \emph{tree}. Event sources and signals are represented as such nodes. As part of the revalidation, subtrees are inspected and, in case of opaque nodes (see below), are rebuilt.
+
+A signal can depend on other signals; whenever the \emph{dependent} signals change their value, the \emph{depending} signal needs to be notified (e.g. to be re-evaluated in case of strict signals). This means that there is an implicit observer-subject relationship between such signals. Maintaining such relationship is straightforward for derived signals such as \texttt{val s1 = s0.map(\dots)} where it is statically known that \texttt{s1} depends on \texttt{s0}. A signal expression of the form \texttt{Strict\{ a() + b()\}} however is completely opaque to the framework (the block is a closure), e.g. it has no prior knowledge that it depends on the signals \texttt{a} and \texttt{b} before actually evaluating it. The nodes of such signals are therefore called \emph{opaque} nodes.
+
+When defining a signal such as \texttt{Strict\{ a() + b()\}} we are in fact calling a factory method 
+\begin{lstlisting}
+def Signal[A](op: =>A): Signal[A]
+\end{lstlisting}
+with the argument \texttt{\{ a() + b()\}}. The compiler rewrites the expressions \texttt{a()} and \texttt{b()} to method calls \texttt{a.apply()} and \texttt{b.apply()}, which are important below. The parameter \texttt{op} of the factory method \texttt{Signal} with the type \texttt{=> A} is actually a ``call-by-name'' argument (a nullary function). This means that the expression in the closure body does not get evaluated when the signal is created, but instead it is passed to the newly created signal object. The actual body of the signal is evaluated during a revalidation turn, which uses an internal stack for establish dependencies: before evaluating the above signal expression, the signal is pushed to the stack; during the evaluation of the signal expression if the execution gets to an \texttt{apply} method of a signal, the topmost element on the stack is added to the dependents list of the signal. This way, dependencies are automatically discovered, without the need of explicitly stating them.
+
+For some language expressions, dependencies can actually vary. Consider the signal
+\begin{lstlisting}
+val s = Signal { if (c()) a() else b() }
+\end{lstlisting}
+Signal \texttt{s} should ideally ever depend on only two signal: on signal \texttt{c} and either \texttt{a} or \texttt{b} (depending on \texttt{c}'s value). Therefore, when a node notifies its dependencies of a change, it removes all opaque dependents (and expects them to re-add themselves as needed).
+
+
+\subsubsection{Lifecycle management of observers}
 
 
 
