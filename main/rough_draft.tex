@@ -1,0 +1,57 @@
+\begin{figure}[h!] 
+\begin{tikzpicture}
+
+  \begin{umlpackage}{model} 
+  \umlemptyclass[x=2, y=0]{DirectoryListModel} 
+  \umlemptyclass[x=2, y=-2]{DirectoriesPaneModel}
+  \umlemptyclass[x=2, y=-4]{MainWindowModel}
+  \umluniassoc{DirectoriesPaneModel}{DirectoryListModel}
+  \umluniassoc{MainWindowModel}{DirectoriesPaneModel}
+  \end{umlpackage}
+
+  \begin{umlpackage}{controller}
+  \umlemptyclass[x=11, y=0]{DirectoryListController}
+  \umlemptyclass[x=11, y=-2]{DirectoriesPaneController}
+  \umlemptyclass[x=11, y=-4]{MainWindowController}
+  \umluniassoc{DirectoriesPaneController}{DirectoryListController}
+  \umluniassoc{MainWindowController}{DirectoriesPaneController}
+  \end{umlpackage}
+  
+  \begin{umlpackage}{view}
+  \umlemptyclass[x=2, y=-7]{DirectoryListView}
+  \umlemptyclass[x=6.5, y=-7]{DirectoriesPaneView}
+  \umlemptyclass[x=11, y=-7]{MainWindowView}
+  \umluniassoc{DirectoriesPaneView}{DirectoryListView}
+  \umluniassoc{MainWindowView}{DirectoriesPaneView}
+  \end{umlpackage}
+  
+  
+  % controller -> model
+  %\umluniassoc{DirectoriesPaneController}{DirectoriesPaneModel}
+  %\umluniassoc{MainWindowController}{MainWindowModel}
+  %\umluniassoc{DirectoryListController}{DirectoryListModel}
+  
+  % view -> model
+  %\umlCNuniassoc{DirectoryListView}{6, -3}{DirectoryListModel}
+  %\umlCNuniassoc{DirectoriesPaneView}{6, -5}{{DirectoriesPaneModel}}
+  %\umluniassoc{MainWindowView}{MainWindowModel}
+  
+  % controller -> view
+  %\umlHVHuniassoc{DirectoryListController}{DirectoryListView}
+  %\umluniassoc[geometry=-|, anchor1=190, anchor2=40]{DirectoriesPaneController}{DirectoriesPaneView}
+  %\umluniassoc{MainWindowController}{MainWindowView}
+  
+  %\umluniassoc{controller}{model}
+  
+  
+  \umluniassoc{view}{model}
+  \umluniassoc{controller}{model}
+  \umluniassoc{controller}{view}
+  \umlVHdep[angle1=40, angle2=-90]{view}{controller}
+  \umlHVdep[angle1=100, angle2=-90]{model}{view}
+  
+\end{tikzpicture}
+
+\caption{A simplified version of the actual class Hierarchy.}
+\label{fig:scomm_main}  
+\end{figure}

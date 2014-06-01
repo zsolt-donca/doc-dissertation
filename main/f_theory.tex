@@ -471,9 +471,11 @@ The paper \cite{CPSTransform} describes some academic use cases (Type-Safe print
 
 
 
-\section{Scala-React}\label{sec:scala-react}
+\section{Scala.React}\label{sec:scala-react}
 
-Programming systems with interactive user interfaces requires a considerable amount of engineering to deal with continuous user input and output, yet the predominant programming models dealing with continuous state change in applications is the observer pattern. The Scala library \emph{Scala-React} offers a reactive data-flow programming model, and by that it solves numerous engineering problems observer pattern-based design faces. Amongst multiple Scala features, this is enabled by the higher order concepts of events and state, enabled by Scala's higher-order functions, and by a data-flow DSL embedded into Scala, enabled by continuation passing style transformation that \emph{Scala} offers. Its design is also heavily based on Scala's \emph{traits}, simplifying the binding of observer-based interfaces to the reactive abstractions.\cite{DeprecatingObservers}
+Programming systems with interactive user interfaces requires a considerable amount of engineering to deal with continuous user input and output, yet the predominant programming models dealing with continuous state change in applications is the observer pattern. The Scala library \emph{Scala.React} offers a reactive data-flow programming model, and by that it solves numerous engineering problems observer pattern-based design faces. Amongst multiple Scala features, this is enabled by the higher order concepts of events and state, enabled by Scala's higher-order functions, and by a data-flow DSL embedded into Scala, enabled by continuation passing style transformation that \emph{Scala} offers. Its design is also heavily based on Scala's \emph{traits}, simplifying the binding of observer-based interfaces to the reactive abstractions.\cite{DeprecatingObservers}
+
+TODO: detailed list of benefits of using scala.react when compared to traditional observer pattern - each should be explained below
 
 \subsection{Event streams}
 
@@ -706,7 +708,47 @@ However, if the target platform is Windows, there are a whole set of issues, and
 
 To overcome all of these limitations, OpenJDK's project Caciocavallo can be used \cite{Cacio_Tta_FEST} to provide a graphics stack for the Java VM that is completely independent from the environment, eliminating any need for platform-dependent setup for CI systems. It renders everything into a virtual screen (which is simply a BufferedImage object), and is driven solely by AWT Robot events. However, this also has its own limitations; the most important being that drag-and-drop \cite{IntroDnD} is unsupported, thus it needs certain workarounds (see \fullref{sec:simulated-dnd}).
 
-\section{User Action and Adapter design pattern}\label{sec:user-actions-adapters}
+\section{Design patterns}
+
+\subsection{Model-View-Controller}\label{sec:model-view-controller}
+
+Model-View-Controller is an architectural pattern for implementing user interfaces. It divides an application into three connected parts:
+\begin{itemize}
+\item \textbf{Model} --- consists of the application data, business rules, logic and functions;
+\item \textbf{View} --- consists of the visual representation of the data, along with components that a user can interact with (e.g. consists of the Java Swing components);
+\item \textbf{Controller} --- accepts inputs from the view, and converts it to commands for the model or view.
+\end{itemize}
+
+The interaction between the three components is defined as follows:
+\begin{itemize}
+\item A \textbf{controller} knows the view and the model, it listens to events of the view triggered by the user and updates the view and the model accordingly.
+\item A \textbf{view} accepts user interaction, and notifies its observers (u.i. the controller). It also listens to the changes of the model, and updates its state accordingly.
+\item A \textbf{model} notifies its observers (u.i. the view) whenever its state changes.
+\end{itemize}
+
+Figure \ref{fig:mvc_pattern} shows the relation between the three components of the MVC pattern. The pattern relies on the \emph{Observer} pattern: the view is the subject of the observing controller, and the model is the subject of the observing view (hence the indirect dependencies on figure \ref{fig:mvc_pattern}).
+
+The purpose of this separation is that the parts can be interchangeable (e.g. more than one view can exist for the same model, or more than behavior can be defined using different controllers), and are testable separately (e.g. it is possible to the test just the model without a UI, to test just the view with a mocked model, or to test the controller with mocked view and model).
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture} 
+\umlemptyclass[x=0, y=0]{Model} 
+\umlemptyclass[x=6, y=0]{Controller} 
+\umlemptyclass[x=3, y=-2]{View} 
+\umluniassoc[geometry=--]{Controller}{Model} 
+\umluniassoc[geometry=--]{Controller}{View} 
+\umluniassoc[geometry=--]{View}{Model} 
+\umlVHdep{Model}{View}
+\umlHVdep{View}{Controller}
+\end{tikzpicture}
+\caption{The Model-View-Controller pattern.}
+\label{fig:mvc_pattern}
+\end{figure}
+
+\section{Functional testing of an application with a user interface}
+
+\subsection{User Action and Adapter design pattern}\label{sec:user-actions-adapters}
 
 The users using an application with a UI typically interact with it by executing a series of operations that change the application's state. These operations might themselves be consisting of multiple operations of the UI components, changing the UI's state and, indirectly, changing the application's internal state. UI test simulating the users can incorporate in their architecture the concept of separation: the tests can interact with a user action layer (consisting of the actions the user can do with the application), and the user actions can interact with an adapter layer that itself interacts with the UI components (e.g. by using FEST-Swing).
 

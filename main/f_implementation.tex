@@ -3,6 +3,23 @@
 
 \section{Scala Commander}
 
+Scala Commander is a simple desktop application built as a proof-of-concept of the library \emph{Scala.React}, \emph{Scala-Swing}, and of Scala as a language of choice for general application development. It is built using the Model-View-Controller design pattern (see section \ref{sec:model-view-controller}), where the model consists of Scala.React \emph{event streams} and \emph{signals}, the view consists of Scala-Swing components, and the operations in the controller are implemented using Scala.React \emph{reactors}.
+
+Scala Commander a simple \emph{orthodox file manager} application, consisting of two panels showing the contents of one directory each (see figure \ref{fig:scomm_main}). The user can navigate to an arbitrary directory, can select files and folders, and can execute operations on the selection such as copying, moving, or deletion.
+
+
+
+\begin{figure}[h!] 
+  \centering
+    \includegraphics[width=1\textwidth]{images/scala-commander-main.png}
+  \caption{Scala-Commander.}
+  \label{fig:scomm_main}  
+\end{figure}
+
+\subsection{Class hierarchy}
+
+
+
 \section{Test auditing}\label{sec:test-auditing}
 
 \subsection {Non-independent tests}
