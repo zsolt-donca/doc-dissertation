@@ -199,7 +199,7 @@ def a(x: Int): Int = {
 def b(x: Int): Int = { x + 2 }
 \end{lstlisting} 
 
-A special case of tail call optimization is \emph{tail recursion}, where the method being called might lead to invoking the same method again: it's either a direct call to the very same method (direct tail recursion), or an indirect call which will result in the method being called again (mutual tail recursion). Tail recursion plays an important part of functional programming as it allows the using of recursive method calls instead of loops.
+A special case of tail call optimization is \emph{tail recursion}, where the method being called might lead to invoking the same method again: it's either a direct call to the very same method (direct tail recursion), or a call to an other method which will eventually result in the current method being called again (mutual tail recursion). Tail recursion plays an important part of functional programming as it allows the using of recursive method calls instead of loops.
 
 Scala only offers direct tail recursion, which is realized in compiler-time. The reason is that the JVM does not support mutual tail recursion or tail call optimization - a feat that needs runtime support.\footnote{Note that this is particular to the JVM only --- the language F\# running on top of the .NET CLR \emph{does} have tail call optimization}
 
@@ -213,28 +213,135 @@ def factorial(n: Int): Int = {
   factorialAcc(1, n)
 }
 \end{lstlisting}
-\caption{Calculating factorial using tail recursion.}
+\caption{Calculating factorial using tail recursion. Notice the annotation \texttt{@tailrec}.}
 \label{fig:example_scala_tailrec}
 \end{figure}
 
-Figure \ref{fig:example_scala_tailrec} illustrates...
+The Scala compiler will automatically optimize any truly tail-recursive method. If you annotate a method that you believe is tail-recursive with the \texttt{@tailrec} annotation, then the compiler will fail to compile you if the method is actually not tail-recursive. This makes the \texttt{@tailrec} annotation a good idea, both to ensure that a method is currently optimizable and that it remains optimizable as it is modified.
+
+Note that Scala does not consider a method to be tail-recursive if it can be overridden. Thus the method must either be private, final, on an object (as opposed to a class or trait), or inside another method to be optimized.
 
 \subsection{Functions as types}
 \subsubsection{higher order functions}
-\subsubsection{partial functions}
 
 \subsection{Currying}
+
+Currying is the technique of transforming a function that takes multiple arguments (or a tuple of arguments) in such a way that it can be called as a chain of functions, each with a single argument (partial application).
+
+Consider the following function:
+\begin{lstlisting}
+def sum(a: Int)(b: Int): Int = { a + b }
+\end{lstlisting}
+This is a curried function, which takes an integer \texttt{a} and returns a function that takes an integer \texttt{b} and returns the value \texttt{a + b}. This is just syntactic sugar for the form:
+\begin{lstlisting}
+def sum(a: Int): (Int => Int) = b => a + b
+\end{lstlisting}
+Both forms can be used in the same way:
+\begin{lstlisting}
+println(sum(1)(2)) // prints 3
+
+val plusOne: (Int => Int) = sum(1)
+println(plusOne(2)) // prints 3
+\end{lstlisting}
+
+Typical use cases of currying in Scala include helping type inference, providing fluent API, and performance improvements in multi-stage computation.
+
+\subsubsection{For type inference}
+
+In Scala, type inference of expressions on a single line always works form left to right: the leftmost expression is evaluated first, then followed by the next expression to the right. Chained function applications of curried functions are considered separate expression, and therefore type inference on a proceeding parameter can affect the type inference of a latter parameter. Consider the library function \texttt{foldLeft} defined on sequences of base type \texttt{A}:
+\begin{lstlisting}
+def foldLeft[B](z: B)(op: (B, A) => B): B
+\end{lstlisting}
+This allows the following code:
+\begin{lstlisting}
+val s = List("Joe", "Jack").foldLeft(0)((len, name) => len + name.length)
+println(s) // prints 7
+\end{lstlisting}
+If \texttt{foldLeft} was defined as a simple non-curried function such as the following:
+\begin{lstlisting}
+def foldLeft[B](z: B, op: (B, A) => B): B
+\end{lstlisting}
+The one would have to provide more explicit types:
+\begin{lstlisting}
+List("Joe", "Jack").foldLeft(0, (len: Int, name: String) => len + name.length)
+List("Joe", "Jack").foldLeft[Int](0, (len, name) => len + name.length)
+\end{lstlisting}
+
+\subsubsection{For fluent API}
+Currying (together with other language features) allows to create an API that looks like a language construct:
+\begin{lstlisting}
+def loop[A](n: Int)(body: => A): Unit = (0 until n) foreach (n => body)
+
+loop(2) {
+   println("hello!")
+}
+\end{lstlisting}
+
+\subsubsection{Multi-stage computation}
+
+Consider a problem where we want to decide whether given point is inside a given circle, identified by its center point and radius:
+
+\begin{lstlisting}
+class Point(val x: Double, val y: Double)
+class Circle(val center: Point, val radius: Double)
+
+def isInside(c: Circle, p: Point): Boolean = {
+  import Math.pow
+  val radiusSquare = pow(c.radius, 2)
+  val distSquare = pow(p.x - c.center.x, 2) + pow(p.y - c.center.y, 2)
+  distSquare <= radiusSquare
+}
+
+val myCircle = new Circle(new Point(1, 2), 2)
+val points = Seq(new Point(2, 3), new Point(4, 2), new Point(1, 1))
+val inside = points.map(p => isInside(myCircle, p))
+println(inside) // List(true, false, true)
+\end{lstlisting}
+
+In the above example when we calculate whether a \emph{series} of points are inside the \emph{same} circle, we are calculating the value \texttt{radiusSquare} over and over again for each point, even though calculating it only once and then using it for all the points would suffice. Currying offers a simple and elegant solution:
+\begin{lstlisting}
+def isInside(c: Circle): (Point => Boolean) = {
+  import Math.pow
+  val radiusSquare = pow(c.radius, 2)
+
+  (p: Point) => {
+    val distSquare = pow(p.x - c.center.x, 2) + pow(p.y - c.center.y, 2)
+    radiusSquare >= distSquare
+  }
+}
+
+val myCircle = new Circle(new Point(1, 2), 2)
+val points = Seq(new Point(2, 3), new Point(4, 2), new Point(1, 1))
+val isInsideMyCircle = isInside(myCircle)
+val inside = points.map(p => isInsideMyCircle(p))
+println(inside) // List(true, false, true)
+\end{lstlisting}
+
+Now the function \texttt{isInsideMyCircle} already has the value \texttt{radiusSquare} pre-calculated. Note that in this case using the simple multi-parameter list version of currying does not offer the same performance benefits, because Scala cannot automatically transform the function body to extract computation that is dependent only on a subset of the parameters.
+
+\subsubsection{Partial functions}
+
+Partial function application and currying are related. One of the significant differences between the two is that a call to a partially applied function returns the result right away, not another function down the currying chain; this distinction can be illustrated clearly for functions whose arity is greater than two.
+
+Let us consider the following example:
+\begin{lstlisting}
+def sum3(a: Int, b: Int, c: Int) = a + b + c
+val sum2: ((Int, Int) => Int) = sum3(1, _: Int, _: Int)
+println(sum2(2, 3)) // prints 6
+\end{lstlisting}
+
+After fixing the first parameter to the value \texttt{1}, the function \texttt{sum2} is a binary function, taking two arguments. This is in contrast to what it would be if \texttt{sum3} were a curried function:
+\begin{lstlisting}
+def sum3(a: Int)(b: Int)(c: Int) = a + b + c
+val sum2: (Int => Int => Int) = sum3(1)
+println(sum2(2)(3)) // prints 6
+\end{lstlisting}
 
 \subsection{Standard functional elements}
 
 \subsection{Algebraic data types and pattern matching}
 
 \subsubsection{tuples}
-
-\subsection{Delimited continuations}
-
-
-
 
 \section{Scala-swing}
 
