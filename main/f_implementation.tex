@@ -16,7 +16,59 @@ Scala Commander a simple \emph{orthodox file manager} application, consisting of
   \label{fig:scomm_main}  
 \end{figure}
 
-\subsection{Class hierarchy}
+\subsection{The directory list}
+
+The directory list model is built on Scala.React signals (variables and functions), event sources and reactors.
+
+The model contains entries in the form of the path and the displayed name:
+\begin{lstlisting}
+case class FileEntry(path: Path, name: String)
+\end{lstlisting}
+
+The model's state consists of three signal \emph{variables} and two (derived) signal \emph{functions}:
+\begin{itemize}
+\item \texttt{currentDirectory} --- the current directory (as a \texttt{java.nio.Path} object);
+\item \texttt{selectedPaths} --- the set of selected paths;
+\item \texttt{active: Var[Boolean]} --- a flag showing whether the directory list is considered active or inactive;
+\item \texttt{currentDirContents} --- holds, as a list of files, the contents of the current directory based on the variable  \texttt{currentDirectory};
+\item \texttt{selectionInfo} --- holds an aggregated info of what the user selected, based on \texttt{selectedPaths} and \texttt{currentDirectory}.
+\end{itemize}
+
+The model also contains three event sources, each representing an \emph{action} that is defined on the directory list:
+\begin{itemize}
+\item \texttt{goToParent: EventSource[Unit]} --- go to the parent of the current directory (if it exists);
+\item \texttt{goToIndex: EventSource[Int]} --- go to the directory identified by the given index (index of the list \texttt{currentDirContents});
+\item \texttt{selectIndices: EventSource[Set[Int]]} --- select paths identified by the given set of indexes.
+\end{itemize}
+
+Finally, the model consists of four reactors that glue together the model's state and the event sources: whenever a certain event source emits, they alter the model's state accordingly. The four reactors are the following:
+\begin{itemize}
+\item \texttt{goToParentReactor} --- awaits the next \texttt{goToParent} event in a loop, after which it sets the variable \texttt{currentDirectory} to the parent of the current directory (if it exists);
+\item \texttt{goToIndexReactor} --- awaits the next index of \texttt{goToIndex} in a loop, after which it sets current directory to the directory identified by the given index based on the current value of \texttt{currentDirContents};
+\item \texttt{selectIndicesReactor} --- awaits the next index set of \texttt{selectIndices} in a loop, after which it sets the variable \texttt{selectedPaths} based on the current value of \texttt{currentDirContents};
+\item \texttt{activeReactor} --- awaits the next value of the signal \texttt{active}, and if it is set to false, clears the selection (sets the variable \texttt{selectedPaths} to the empty set).
+\end{itemize}
+
+Because of Scala.React's automatic 
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture} 
+\umlemptyclass[x=0, y=-2]{DiskState}
+\umlemptyclass[x=3, y=0]{DirectoryListModel}
+\umlemptyclass[x=9, y=0]{DirectoryListController} 
+\umlemptyclass[x=6, y=-2]{DirectoryListView} 
+\umluniassoc[geometry=--]{DirectoryListModel}{DiskState} 
+\umluniassoc[geometry=--]{DirectoryListController}{DirectoryListModel} 
+\umluniassoc[geometry=--]{DirectoryListController}{DirectoryListView} 
+\umluniassoc[geometry=--]{DirectoryListView}{DirectoryListModel} 
+\umlVHdep{DirectoryListModel}{DirectoryListView}
+\umlHVdep{DirectoryListView}{DirectoryListController}
+\umlVHdep{DiskState}{DirectoryListModel}
+\end{tikzpicture}
+\caption{The directory list components.}
+\label{fig:mvc_pattern}
+\end{figure}
 
 
 
