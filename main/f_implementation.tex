@@ -20,61 +20,9 @@ Scala Commander a simple \emph{orthodox file manager} application, consisting of
 
 The main window consists of two directory list components: the \emph{left} list and the \emph{right} list. Both serve the same purpose: the user can see the contents of a directory, can navigate to a subdirectory or to the parent directory, and can select files and folders in the current directory. At any point of time, the directory list that the user last used is the \emph{active} list, while the other list is the \emph{inactive} list. The operations on the toolbar are always executed on the selection of the active list, and the destination of the operation (e.g. copy or move) is the directory of the inactive list.
 
-The design of the implementation is according to the Model-View-Controller design pattern. The implementation is heavily based on Scala.React concepts, resulting in significantly reduced code length and complexity, as there is no need care for event propagation, dependencies between variables, consistency, and so on.
+The design of the implementation is according to the Model-View-Controller design pattern (see figure \ref{fig:mvc_pattern}). The implementation is heavily based on Scala.React concepts, resulting in significantly reduced code length and complexity, as there is no need care for event propagation, dependencies between variables, consistency, and so on.
 
 % The directory list is a list component on the UI that displays the contents of a certain directory. The user can navigate to any subdirectory or can navigate to the parent directory. Navigation automatically updates the list. At any time, the user can select a list of files and folders and do operations on them: copy, move, delete, either by using the buttons on the toolbar or by mouse gesture (drag and drop).
-
-\subsubsection{Model}
-
-The directory list model holds the state of a navigable list and defines a set of operations. The operations alter the internal state of the model (e.g. change the current directory, or change selection). The model is entirely built around Scala.React concepts, such as signal variables, signal functions, event streams and reactors.
-
-The state of the model is defined by the following signal variables:
-\begin{itemize}
-\item \texttt{currentDirectory: Var[Path]} --- holds the current directory (as a \texttt{java.nio.Path} object);
-\item \texttt{selectedPaths: Var[Set[Path]]} --- holds the set of currently selected paths (the selection is highlighted on the user interface);
-\item \texttt{active: Var[Boolean]} --- a flag representing whether the directory list is active or inactive;
-\item \texttt{diskState: Var[Long]} --- a counter that is incremented whenever the disk is modified and the model need refreshing (u.i. after copying/moving/renaming/deleting, or when the user presses \emph{Refresh}).
-\end{itemize}
-
-There are also two derived signals:
-\begin{itemize}
-
-\item \texttt{currentDirContents} --- a strict signal that builds the actual list of files and folders that are located inside the current directory; it is dependent on \texttt{currentDirectory} and \texttt{diskState} (the value is just queried and ignored);
-
-\item \texttt{selectionInfo} --- a strict signal holding an aggregated summary of what the user selected, depending \texttt{selectedPaths} and \texttt{currentDirectory}.
-\end{itemize}
-
-
-%The model contains entries in the form of the path and the displayed name:
-%\begin{lstlisting}
-%case class FileEntry(path: Path, name: String)
-%\end{lstlisting}
-
-The model's state consists of three signal \emph{variables} and two (derived) signal \emph{functions}:
-\begin{itemize}
-\item \texttt{currentDirectory} --- the current directory (as a \texttt{java.nio.Path} object);
-\item \texttt{selectedPaths} --- the set of selected paths;
-\item \texttt{active: Var[Boolean]} --- a flag showing whether the directory list is considered active or inactive;
-\item \texttt{currentDirContents} --- holds, as a list of files, the contents of the current directory based on the variable  \texttt{currentDirectory};
-\item \texttt{selectionInfo} --- holds an aggregated info of what the user selected, based on \texttt{selectedPaths} and \texttt{currentDirectory}.
-\end{itemize}
-
-The model also contains three event sources, each representing an \emph{action} that is defined on the directory list:
-\begin{itemize}
-\item \texttt{goToParent: EventSource[Unit]} --- go to the parent of the current directory (if it exists);
-\item \texttt{goToIndex: EventSource[Int]} --- go to the directory identified by the given index (index of the list \texttt{currentDirContents});
-\item \texttt{selectIndices: EventSource[Set[Int]]} --- select paths identified by the given set of indexes.
-\end{itemize}
-
-Finally, the model consists of four reactors that glue together the model's state and the event sources: whenever a certain event source emits, they alter the model's state accordingly. The four reactors are the following:
-\begin{itemize}
-\item \texttt{goToParentReactor} --- awaits the next \texttt{goToParent} event in a loop, after which it sets the variable \texttt{currentDirectory} to the parent of the current directory (if it exists);
-\item \texttt{goToIndexReactor} --- awaits the next index of \texttt{goToIndex} in a loop, after which it sets current directory to the directory identified by the given index based on the current value of \texttt{currentDirContents};
-\item \texttt{selectIndicesReactor} --- awaits the next index set of \texttt{selectIndices} in a loop, after which it sets the variable \texttt{selectedPaths} based on the current value of \texttt{currentDirContents};
-\item \texttt{activeReactor} --- awaits the next value of the signal \texttt{active}, and if it is set to false, clears the selection (sets the variable \texttt{selectedPaths} to the empty set).
-\end{itemize}
-
-Because of Scala.React's automatic 
 
 \begin{figure}[h!]
 \centering
@@ -94,6 +42,114 @@ Because of Scala.React's automatic
 \caption{The directory list components.}
 \label{fig:mvc_pattern}
 \end{figure}
+
+
+\subsubsection{Model}
+
+The directory list model (class \texttt{DirectoryListModel}) holds the state of a navigable list and defines a set of operations. The operations alter the internal state of the model (e.g. change the current directory, or change selection). The model is entirely built around Scala.React concepts, such as signal variables, signal functions, event streams and reactors.
+
+The state of the model is defined by the following signal variables:
+\begin{itemize}
+\item \texttt{currentDirectory: Var[Path]} --- holds the current directory (as a \texttt{java.nio.Path} object);
+\item \texttt{selectedPaths: Var[Set[Path]]} --- holds the set of currently selected paths (the selection is highlighted on the user interface);
+\item \texttt{active: Var[Boolean]} --- a flag representing whether the directory list is active or inactive;
+\item \texttt{diskState: Var[Long]} --- a counter that is incremented whenever the disk is modified and the model need refreshing (u.i. after copying/moving/renaming/deleting, or when the user presses \emph{Refresh}).
+\end{itemize}
+
+There are also two derived signals:
+\begin{itemize}
+
+\item \texttt{currentDirContents} --- a strict signal that builds the actual list of files and folders that are located inside the current directory; it is dependent on \texttt{currentDirectory} and \texttt{diskState} (the value is just queried and ignored);
+
+\item \texttt{selectionInfo} --- a strict signal holding an aggregated summary of what the user selected, depending \texttt{selectedPaths} and \texttt{currentDirectory}.
+\end{itemize}
+
+The model also contains three event sources, each representing an \emph{action} that is defined on the directory list:
+\begin{itemize}
+\item \texttt{goToParent: EventSource[Unit]} --- go to the parent of the current directory (if it exists);
+\item \texttt{goToIndex: EventSource[Int]} --- go to the directory identified by the given index (index of the list \texttt{currentDirContents});
+\item \texttt{selectIndices: EventSource[Set[Int]]} --- select paths identified by the given set of indexes.
+\end{itemize}
+
+Finally, the model consists of four reactors that glue together the model's state and the event sources: whenever a certain event source emits, they alter the model's state accordingly. The four reactors are the following:
+\begin{itemize}
+\item \texttt{goToParentReactor} --- awaits the next \texttt{goToParent} event in a loop; when it emits, sets the variable \texttt{currentDirectory} to the parent of the current directory (if it exists);
+\item \texttt{goToIndexReactor} --- awaits the next index of \texttt{goToIndex} in a loop; when it emits, sets current directory to the directory identified by the index emitted by the event based on the current value of \texttt{currentDirContents};
+\item \texttt{selectIndicesReactor} --- awaits the next index set of \texttt{selectIndices} in a loop; when it emits, sets the variable \texttt{selectedPaths} based on the current value of \texttt{currentDirContents};
+\item \texttt{activeReactor} --- awaits the next value of the signal \texttt{active}, and if it is set to false, clears the selection (sets the variable \texttt{selectedPaths} to the empty set).
+\end{itemize}
+
+\subsubsection{View}
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+  \centering
+    \includegraphics[width=0.35\textwidth]{images/scala-commander-directoryListView.png}
+  \caption{The directory list view and its subcomponents.}
+  \label{fig:scomm_main}  
+\end{wrapfigure}
+
+The directory list view (class \texttt{DirectoryListView}) is responsible for visualizing the model. It is a \texttt{scala.swing.BorderPanel}, and contains four subcomponents (figure \ref{fig:scomm_main}):
+\begin{itemize}
+\item \texttt{currentDirLabel}: a label displaying the full path of the current directory (marked as \texttt{1});
+\item \texttt{currentDirPanel}: the panel containing the label \texttt{currentDirLabel}; the panel's background is blue for the active list and gray for the inactive list (marked as \texttt{2});
+\item \texttt{listView}: a \texttt{scala.swing.ListView} component that displays the contents of the current directory, and consists of the \emph{list data} and the \emph{selection} (marked as \texttt{3});
+\item \texttt{summaryLabel}: a label displaying a summary of the current selection (marked as \texttt{4}).
+\end{itemize}
+
+The view contains \texttt{observe} blocks listening to model signals, where each listener updates the appropriate Swing component. This ensures that the view is always up-to-date as the model changes.
+
+\begin{figure}[h!]
+\centering
+\begin{lstlisting}[frame=single]
+observe(model.currentDirectory) {
+  currentDir: Path => currentDirLabel.text = currentDir.toString
+}
+\end{lstlisting}
+\caption{The \texttt{observe} block listening to the changes of the model signal \texttt{currentDirectory}.}
+\label{fig:scomm_observe_currentDir}
+\end{figure}
+
+The view listens to changes of the following model signals:
+\begin{itemize}
+\item \texttt{currentDirectory} --- the view updates \texttt{currentDirLabel} (see figure \ref{fig:scomm_observe_currentDir});
+\item \texttt{currentDirContents} --- updates the \emph{list data} of \texttt{listView} and clears the \emph{selection};
+\item \texttt{selectedPaths} --- updates the \emph{selection} of \texttt{listView};
+\item \texttt{selectionInfo} --- updates \texttt{summaryLabel};
+\item \texttt{active} --- updates the background of \texttt{currentDirPanel}.
+\end{itemize}
+
+\subsubsection{Controller}
+
+The controller (class \texttt{DirectoryListController}) listens to the events of the view's components (extends the trait \texttt{scala.swing.Reactor}), and triggers the appropriate event sources from the model. 
+
+The controller listens to the \emph{mouse clicks}, \emph{selection} and \emph{key} events of the \texttt{listView} component:
+\begin{lstlisting}
+listenTo(view.listView.mouse.clicks, view.listView.selection, view.listView.keys)
+\end{lstlisting}
+
+
+The controller reacts to the events generated by the above sources as follows:
+\begin{lstlisting}
+reactions += {
+  case MouseClicked(_, _, _, 2, _) => // triggered by `mouse.clicks'
+    val leadIndex = view.listView.selection.leadIndex
+    model.goToIndex << leadIndex
+  case ListSelectionChanged(_, _, false) => // triggered by `selection'
+    if (!view.listView.updating) {
+      val selection = view.listView.selection.indices.toSet
+      model.selectIndices << selection
+    }
+  case KeyPressed(_, Key.Enter, _, _) => // triggered by `key'
+    val leadIndex = view.listView.selection.leadIndex
+    model.goToIndex << leadIndex
+  case KeyPressed(_, Key.BackSpace, _, _) => // triggered by `key'
+    model.goToParent << Unit
+}
+\end{lstlisting}
+
+Note that the event handling mechanism relies heavily on Scala's pattern matching. For example, the first case fixes the fourth parameter \texttt{clicks} to the value \texttt{2}, thus the case matches only for double click events. 
+
+\subsubsection{Event propagation}
 
 
 
