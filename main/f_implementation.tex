@@ -18,12 +18,37 @@ Scala Commander a simple \emph{orthodox file manager} application, consisting of
 
 \subsection{The directory list}
 
-The directory list model is built on Scala.React signals (variables and functions), event sources and reactors.
+The main window consists of two directory list components: the \emph{left} list and the \emph{right} list. Both serve the same purpose: the user can see the contents of a directory, can navigate to a subdirectory or to the parent directory, and can select files and folders in the current directory. At any point of time, the directory list that the user last used is the \emph{active} list, while the other list is the \emph{inactive} list. The operations on the toolbar are always executed on the selection of the active list, and the destination of the operation (e.g. copy or move) is the directory of the inactive list.
 
-The model contains entries in the form of the path and the displayed name:
-\begin{lstlisting}
-case class FileEntry(path: Path, name: String)
-\end{lstlisting}
+The design of the implementation is according to the Model-View-Controller design pattern. The implementation is heavily based on Scala.React concepts, resulting in significantly reduced code length and complexity, as there is no need care for event propagation, dependencies between variables, consistency, and so on.
+
+% The directory list is a list component on the UI that displays the contents of a certain directory. The user can navigate to any subdirectory or can navigate to the parent directory. Navigation automatically updates the list. At any time, the user can select a list of files and folders and do operations on them: copy, move, delete, either by using the buttons on the toolbar or by mouse gesture (drag and drop).
+
+\subsubsection{Model}
+
+The directory list model holds the state of a navigable list and defines a set of operations. The operations alter the internal state of the model (e.g. change the current directory, or change selection). The model is entirely built around Scala.React concepts, such as signal variables, signal functions, event streams and reactors.
+
+The state of the model is defined by the following signal variables:
+\begin{itemize}
+\item \texttt{currentDirectory: Var[Path]} --- holds the current directory (as a \texttt{java.nio.Path} object);
+\item \texttt{selectedPaths: Var[Set[Path]]} --- holds the set of currently selected paths (the selection is highlighted on the user interface);
+\item \texttt{active: Var[Boolean]} --- a flag representing whether the directory list is active or inactive;
+\item \texttt{diskState: Var[Long]} --- a counter that is incremented whenever the disk is modified and the model need refreshing (u.i. after copying/moving/renaming/deleting, or when the user presses \emph{Refresh}).
+\end{itemize}
+
+There are also two derived signals:
+\begin{itemize}
+
+\item \texttt{currentDirContents} --- a strict signal that builds the actual list of files and folders that are located inside the current directory; it is dependent on \texttt{currentDirectory} and \texttt{diskState} (the value is just queried and ignored);
+
+\item \texttt{selectionInfo} --- a strict signal holding an aggregated summary of what the user selected, depending \texttt{selectedPaths} and \texttt{currentDirectory}.
+\end{itemize}
+
+
+%The model contains entries in the form of the path and the displayed name:
+%\begin{lstlisting}
+%case class FileEntry(path: Path, name: String)
+%\end{lstlisting}
 
 The model's state consists of three signal \emph{variables} and two (derived) signal \emph{functions}:
 \begin{itemize}
