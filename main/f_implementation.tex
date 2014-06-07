@@ -147,9 +147,27 @@ reactions += {
 }
 \end{lstlisting}
 
-Note that the event handling mechanism relies heavily on Scala's pattern matching. For example, the first case fixes the fourth parameter \texttt{clicks} to the value \texttt{2}, thus the case matches only for double click events. 
+Note that the event handling mechanism relies heavily on Scala's pattern matching. For example, in order to listen to double click events, the first case matches events typed of the case class \texttt{MouseClicked} with the fourth parameter \texttt{clicks} fixed to the value \texttt{2}. 
 
-\subsubsection{Event propagation}
+\subsubsection{Interaction between the components --- example}
+
+Figure \ref{fig:scomm_event_propagation} shows the interaction between the components of a directory list when the user changes the current directory. It consists of four steps:
+\begin{enumerate}
+\item As the user interacts with the UI (double clicks on \texttt{listView}), the event is handled by the controller, and the controller makes event stream \texttt{goToIndex} to emit an index (the index of the line where the double clicked).
+\item In the next turn, Scala.React resumes the reactor \texttt{goToIndexReactor}, which gets the index, and queries \texttt{currentDirContents} and \texttt{currentDirectory}, and updates \texttt{currentDirectory} and \texttt{selectedPaths}.
+\item In the next turn, Scala.React revalidates the strict signal \texttt{currentDirContents} because its dependency \texttt{currentDirectory} was changed.
+\item In the next turn, Scala.React notifies the observer blocks in the view listening to model signals   changed in previous turns; this results in the view components being updated.
+\end{enumerate}
+
+\begin{figure}[h!]
+\centering
+  \includegraphics[width=1\textwidth]{images/scomm-event-propagation.pdf}
+\caption{Sequence diagram showing the interaction between the components of a directory list when the user navigates in a directory list.}
+\label{fig:scomm_event_propagation}
+\end{figure}
+
+
+
 
 
 

@@ -55,3 +55,48 @@
 \caption{A simplified version of the actual class Hierarchy.}
 \label{fig:scomm_main}  
 \end{figure}
+
+
+
+\begin{figure}[h!]
+\centering
+
+\begin{tikzpicture} 
+\begin{umlseqdiag} 
+\umlactor{user} 
+\umlobject{view}
+\umlobject{controller}
+\umlobject{model}
+
+% double click
+
+\begin{umlfragment}
+\begin{umlcall}[op={double click}]{user}{view} 
+\begin{umlcall}[op={MouseClicked}]{view}{controller}
+\begin{umlcall}[op={goToIndex emit}]{controller}{model}
+\end{umlcall} 
+\end{umlcall} 
+\end{umlcall} 
+\end{umlfragment} 
+
+\umlfpart[default] 
+
+%\begin{umlfragment}[label=goToParentReactor]
+\begin{umlcallself}[op={currentDirContents.now}]{model}
+\end{umlcallself}
+\begin{umlcallself}[op={currentDirectory.update}]{model}
+\end{umlcallself}
+\begin{umlcallself}[op={selectedPaths.update}]{model}
+\end{umlcallself}
+\end{umlfragment} 
+
+
+
+\end{umlseqdiag} 
+\end{tikzpicture}
+
+
+\caption{Event propagation.}
+\label{fig:scomm_event_propagation}
+\end{figure}
+
