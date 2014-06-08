@@ -3,11 +3,9 @@
 
 \section{Scala Commander}
 
-Scala Commander is a simple desktop application built as a proof-of-concept of the library \emph{Scala.React}, \emph{Scala-Swing}, and of Scala as a language of choice for general application development. It is built using the Model-View-Controller design pattern (see section \ref{sec:model-view-controller}), where the model consists of Scala.React \emph{event streams} and \emph{signals}, the view consists of Scala-Swing components, and the operations in the controller are implemented using Scala.React \emph{reactors}.
+Scala Commander is a simple desktop application built as a proof-of-concept for the libraries \emph{Scala.React} and \emph{Scala-Swing}, and for Scala as a language of choice for development of reactive applications.
 
-Scala Commander a simple \emph{orthodox file manager} application, consisting of two panels showing the contents of one directory each (see figure \ref{fig:scomm_main}). The user can navigate to an arbitrary directory, can select files and folders, and can execute operations on the selection such as copying, moving, or deletion.
-
-
+Scala Commander a \emph{orthodox file manager} application (see figure \ref{fig:scomm_main}). The center of the window consists of two panels (directory lists) each showing the contents of one directory. The user can navigate to an arbitrary directory, can select files and folders, and can execute operations on the selection such as copying, moving, or deletion. The bottom of the window is for file system operations: there is a toolbar with a list of buttons representing file system operations, and whenever a button is clicked, a helper panel appears that prompts the user to confirm the action.
 
 \begin{figure}[h!] 
   \centering
@@ -15,6 +13,12 @@ Scala Commander a simple \emph{orthodox file manager} application, consisting of
   \caption{Scala-Commander.}
   \label{fig:scomm_main}  
 \end{figure}
+
+The user interface is \textbf{constantly reacting to the user input}: as the user selects files and folders, a label always summarizes the selection (shows the number of selected files and folders and the total size of files). File system operations are also reactive: after clicking the \emph{Copy} button, the user can further change the selection (the files and folders to be copied) in the source panel, and can change the destination folder by navigating in the destination panel. Such changes are automatically reflected in the helper panel prompting the user at the bottom of the window. While executing a long-running operation, such as copying, the user interface is not blocked, and the user can always cancel the operation by pressing the \emph{Cancel} button.
+
+The application is built on \emph{Scala.React} and on the the Model-View-Controller design pattern (see section \ref{sec:model-view-controller}): the model consists of \emph{event streams},  \emph{signals} and \emph{reactors}, the view listens to the model signals, and the controller interacts with the model's event streams for simple operations such as navigation, and uses \emph{reactors} for complex operations such as a file system operation.
+
+To demonstrate the design choices, we describes two components in greater detail: the \emph{directory list} and the file system operation \emph{copy}.
 
 \subsection{The directory list}
 
