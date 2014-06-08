@@ -210,6 +210,7 @@ class DirectoriesPaneModel(val left: DirectoryListModel,
 Copying is a single reactor: it awaits the user pressing the \emph{Copy} button on the toolbar, displays the panel, awaits the \emph{OK} button, captures the current state of the directories pane and begins copying. The user can abort the copying by pressing the \emph{Cancel} button at any time. After the copying is done or is aborted, the reactor refreshes the disk state and hides the copy panel.
 
 A simplified version of the reactor code is as follows:
+
 \begin{lstlisting}
 Reactor.loop {
   self =>      
@@ -234,29 +235,123 @@ Reactor.loop {
 Note that the \texttt{abortOn} operator executes the body and aborts it as soon as the given reactive (the cancel button) emits. This makes it possible to cancel while waiting for the \emph{OK} button or while actually copying the files.
 
 
-\section{Test auditing}\label{sec:test-auditing}
 
-\subsection {Non-independent tests}
+
+\section{FEST-Logging}\label{sec:test-auditing}
 
 Test suites testing even relatively complex applications can easily contain some hundred tests. Because UI tests, by their nature, typically take much time, the total run time of an entire test suite is usually important. In order to keep the overall runtime at minimum, it is typical to avoid the creation, initialization and the destruction of the individual UI components for each test (which might also be difficult or impossible depending on the architecture of the application). A possible option is to test entire applications and to reuse the same components between the tests.
 
-The problem with testing entire applications throughout entire test suites is that the tests can become dependent on the internal state of the application and on the state of the UI. Thus, it is possible for one test to affect the outcome of another, e.g. one failing test can leave the application in such a state that no other further tests will pass. Having non-independent tests can lead to very fragile and unstable test systems and thus should be avoided as much as possible.
+The problem with testing entire applications throughout entire test suites is that the tests can become dependent on the internal state of the application and on the state of the UI. Thus, it is possible for one test to affect the outcome of another, e.g. one test makes a subtle change in the state of the application and makes another test fail, or, in a more extreme case, one failing test can leave the application in such a state that no other further tests will pass. Having non-independent tests can lead to fragile and unstable test systems and thus should be avoided as much as possible.
 
-Unstable test system can very difficult to cope with. Tests can seemingly fail randomly, and it can be very difficult to reproduce failures that originate from typically a subtle change in the application's state that was made by a previous test (possibly executed multiple tests before). FEST supports saving screenshots anytime during a test, but the test must explicitly save it and it is usually done only on errors. Since in the case of unstable tests, the errors typically manifest themselves only in the tests that are affected by the erroneous tests' side effects, saving screenshots for failing tests does not help much on its own.
+Unstable test system can very difficult to cope with. Tests can seemingly fail randomly, and it can be very difficult to reproduce failures that originate from typically a subtle change in the application's state that was made by a previous test (possibly executed many tests before). FEST supports saving screenshots anytime during a test, but the test must explicitly save it and it is usually done only on errors. Since in the case of unstable tests, the errors typically manifest themselves only in the tests that are affected by the erroneous tests' side effects, saving screenshots for failing tests does not help much on its own.
 
 Understanding the data flow of all the tests of an entire test suite, knowing all the operations that were made on the application's state, along with screenshots made after all important steps can greatly reduce the debugging efforts of an unstable test suite and can benefit the test development and maintenance process.
 
-\subsection {AspectJ-based auditing}
+\subsection{FEST-Logging: AspectJ-based auditing}
 
-A possible implementation of the auditing is by using AspectJ. The runtime system could rely on using join points defined by automatically generated pointcuts, and by using advices wrapping around the join points, the entire method invocation context (stack trace, method arguments) can be stored (logged). \cite{AOPwiki} From the context of each method invocation, an execution tree can then be built and visualized.
+We introduce \emph{FEST-Logging}, an AspectJ-based solution that gathers information of the test methods and on annotated methods in the user code. The gathered information (method arguments, screenshots) are visualized in the form of a table and the entire execution tree can be inspected.
 
-The pointcuts could be generated for the methods of the classed in the test, user action, adapter, fixture, driver or robot layers. The deeper auditing goes through the layers, the more runtime data is gathered and the bigger is the performance cost of the auditing. Thus, it is important to make the set of the audited layers and methods configurable.
+We introduce the JUnit runner \texttt{CacioFESTLoggingRunner}: enables FEST-Logging and executes the tests using the \emph{Cacio-tta} graphics stack (running the tests in the background). Running the tests with this runner is a \textbf{requirement} of FEST-Logging.
 
-Screenshots could be similarly generated after each user action (or adapter operation) of a test.
+We also introduce two annotations:
+\begin{itemize}
+\item \texttt{GUITestBean}: a \emph{type} annotation
+\item \texttt{GUITestAction}: a \emph{method} annotation.
+\end{itemize}
+
+FEST-Logging provides the following features:
+\begin{itemize}
+\item auditing tests --- audits the \emph{test}, \emph{setup} and \emph{teardown} methods (annotated with \texttt{@Test}, \texttt{@Before} and \texttt{@After}).
+\item auditing test actions --- audits \emph{all} methods of classes annotated with \texttt{@GUITestBean};
+\item screenshots of test actions --- the runtime system takes screenshots \emph{before} and \emph{after} methods annotated with \texttt{@GUITestAction} are executed;
+\item screenshots of failed tests --- the runtime system takes screenshots of failing tests, failing either in their \emph{test}, \emph{setup} or \emph{teardown} methods. 
+\end{itemize}
+
+Tests using FEST-Logging generate reports as files in the folder \emph{reports/xml}. The reports can be visualized using the HTML page \emph{web/report.html}.
+
+\subsection{Implementation}
+
+Using a JUnit runner lets us add additional behavior to the execution of a test, similarly to advices in AspectJ. The runner \texttt{CacioFESTLoggingRunner} takes this opportunity to register the test in the object \texttt{MethodCallStack} and to execute the test. When the test is over, it captures any exceptions thrown by the test, unregisters the test from \texttt{MethodCallStack} and writes the audited data to the reports folder.
+
+The test methods and test actions are altered by the aspect class \texttt{FESTLoggingAspect}. Here, we define a series of pointcuts, where each pointcut is to match a method annotated with a certain annotation (see figure \ref{fig:fest-logging-pointcuts}). There are also \emph{around advices} defined referring to the pointcuts, where each advice alters the execution of the method:
+\begin{itemize}
+\item \texttt{auditTestAndGUITestBeanMethods} --- registers and gathers the result of the advised method;
+\item \texttt{takeScreenshotOfFailedTest} --- advises test methods, and takes screenshots if they throw exceptions;
+\item \texttt{takeScreenshotsOfTestActions} --- takes screenshots \emph{before} and \emph{after} executing the advised method.
+\end{itemize}
+Each advice relies on the object \texttt{MethodCallStack}, and stores the gathered data in it.
+
+\begin{figure}[h!]
+\centering
+\begin{lstlisting}
+@Aspect
+class FESTLoggingAspect {
+  @Pointcut("execution(@org.junit.Test * *.*(..))")
+  def testMethods() {}
+
+  @Pointcut("execution(@org.junit.Before * *.*(..))")
+  def beforeMethods() {}
+
+  @Pointcut("execution(@org.junit.After * *.*(..))")
+  def afterMethods() {}
+
+  @Pointcut("execution(* (@edu.zsd.festlogging.GUITestBean *).*(..))")
+  def guiTestBeanMethods() {}
+
+  @Pointcut("execution(@edu.zsd.festlogging.GUITestAction * *.*(..))")
+  def guiTestActionMethods() {}
+  ...
+}
+\end{lstlisting}
+\caption{The pointcuts matching to test methods (first three) and to test actions (last two).}
+\label{fig:fest-logging-pointcuts}
+\end{figure}
+
+\subsubsection{Test auditing: building the method stack}
+
+Figure \ref{fig:fest-logging-auditMethods} shows the advice responsible for auditing. It calls the method \texttt{enterTestMethod}, proceeds the join point, and finally calls the \texttt{exitTestMethod}. This is so the class \texttt{MethodCallStack}, as the name suggests, can keep a stack of objects representing the advised methods.
+
+\begin{figure}[h!]
+\centering
+\begin{lstlisting}
+  @Around("testMethods() || beforeMethods() || afterMethods() || guiTestBeanMethods()")
+  def auditMethods(joinPoint: ProceedingJoinPoint): AnyRef = {
+    MethodCallStack.enterTestMethod(joinPoint)
+    try {
+      val result: AnyRef = joinPoint.proceed()
+      MethodCallStack.exitTestMethod(joinPoint, result)
+      result
+    } catch {
+      case e: Throwable =>
+        MethodCallStack.exitTestMethod(joinPoint, e)
+        throw e
+    }
+  }
+\end{lstlisting}
+\caption{The pointcuts matching to test methods (first three) and to test actions (last two).}
+\label{fig:fest-logging-auditMethods}
+\end{figure}
+
+The class \texttt{MethodCallStack} holds a single reference named \texttt{current} of type \texttt{RunningExecution} (see figure \ref{fig:fest-logging-MethodCallStack}). This represents the \emph{top} of the stack. The very first running execution object is pushed into the stack by \texttt{CacioFESTLoggingRunner} in the form of a \texttt{RunningTestExecution} object. The class \texttt{RunningExecution} holds the advised method, the argument list, has a mutable list of child method invocations and mutable screenshot fields. 
+
+Subsequently, when the actual test methods and the test action methods are executed, the advice \texttt{auditMethods} pushes a new \texttt{RunningTestMethodExecution} object with the parent reference set to the top of the stack. When a method terminates, the stack is ``popped'': the top object, referenced by \texttt{current}, is converted into a new \texttt{Execution} object, this \texttt{Execution} object is added to the invocation list of its parent, and this parent is then assigned to the variable \texttt{current}.
+
+\begin{figure}[h!]
+\centering
+  \includegraphics[width=1\textwidth]{images/FESTLogging-MethodCallStack.pdf}
+\caption{Class diagram of the classes internally used by the object \texttt{MethodCallStack}. Class \texttt{RunningExecution} represents an ongoing execution (with mutable fields), and the class \texttt{Execution} represents a terminated execution (with immutable fields).}
+\label{fig:fest-logging-MethodCallStack}
+\end{figure}
+
+When the execution reaches back the class \texttt{CacioFESTLoggingRunner}, the variable \texttt{current} \textbf{must be} referencing to a \texttt{RunningTestExecution} object. This also transformed to an \texttt{Execution} object, but instead of further pushing it on the stack, this object is transformed to XML format and is written to the reports folder.
+
+\subsubsection{Taking screenshots}
+
+There are two advices taking screenshots: \texttt{take\-Screen\-shot\-Of\-Failed\-Test} and \texttt{take\-Screen\-shots\-Of\-Test\-Actions}. Both rely on the object \texttt{MethodCallStack}: they take the topmost \texttt{Running\-Execution} object on the stack, take the screenshots into files and assign the appropriate fields in the \texttt{Running\-Execution} object. This is based on AspectJ applying multiple advices on the same method using well-defined precedence rules (which is declaration precedence in this case).
 
 \subsection {Formatting the audited data}
 
-Since the runtime data set can be very huge for long tests runs, it is important to provide views that presents the data in an easily accessible, intuitive and adaptive form. 
+Since the runtime data set can be huge for long tests runs, it is important to provide views that presents the data in an easily accessible, intuitive and adaptive form. 
 
 A possible implementation is to generate an HTML page that contains all the data in the form of a pivot table, with a tree axis showing the call hierarchy, and the columns presenting the method arguments and other context info. The pivot table would support drill-down in the call hierarchy. This table would support the following:
 \begin{itemize}
@@ -315,29 +410,38 @@ Method call & Arguments & Returns \\ [0.5ex] % inserts table heading
 \label{fig:formatted_audited_data_report}
 \end{table}
 
-\section{Automatic EDT dispatch}\label{sec:edt-dispatch}
+\subsection{Automatic EDT dispatch}\label{sec:edt-dispatch}
 
-\subsection{Cumbersome synchronization with EDT}\label{sec:edt-sync}
+The threading model of Swing recommends that all Swing-component-related operations are to be executed on the Swing EDT thread, including those of the tests. It is the test developer's responsibility to respect this rule, and thus to delegate all such work to the EDT thread. There are two options: one can either use \texttt{Swing\-Utilities.invoke\-And\-Wait}, or can use the more convenient class \texttt{GuiActionRunner} offered by FEST-Swing. This, in either case, leads to much boilerplate code in the adapter layer and is error-prone.
 
-Since the threading model of Swing recommends that all Swing-component-related operations are to be made on the Swing EDT thread, including those of the tests, it is the test developer's responsibility to delegate all such work to the EDT thread by using FEST-Swing's GuiActionRunner. For tests using the User Action and Adapter design pattern, this can lead to much boilerplate code in the adapter layer. 
+To offer a solution to this problem, we present the annotation \texttt{ExecuteInEDT} (part of \emph{FEST-Logging} library). When an annotated method is called on the test thread, the method is seamlessly and transparently delegated to the Swing EDT thread, and the test thread awaits the result (the return value or the exception). This leads to less effort from the developer's side, and at the same time, increases security on the tests' correctness.
 
-A solution to having to manually delegate work to EDT would be to mark the methods that needs to run on EDT with a certain annotation and let the runtime system do the delegation automatically. This would lead to lesser effort from the developer's side, and at the same time, would lead to increased security on the tests' correctness.
+\subsubsection{Implementation}\label{sec:edt-dispatch}
 
-There can also be methods that must not be invoked on EDT (e.g. most FEST methods, because they check the contents of event queues). Executing those methods on EDT can lead either to exceptions, to the tests hanging, or simply to incorrect behavior. Marking such methods with a certain annotation and letting the runtime system ensure that the test fails whenever the test executes such a method on EDT would also lead to increased security on the tests' correctness.
+We define a pointcut that matches methods annotated with \texttt{ExecuteInEDT}, and we use an \emph{around advice} to delegate the invocation to Swing EDT:
+\begin{lstlisting}
+@Pointcut("execution(@edu.zsd.festlogging.ExecuteInEDT * *.*(..))")
+def executeInEDTMethods() {}
 
-\subsection {Automatic EDT dispatch}\label{sec:edt-dispatch}
+@Around("executeInEDTMethods()")
+def executeInEDT(joinPoint: ProceedingJoinPoint) : AnyRef = {
+  GuiActionRunner.execute(new GuiQuery[AnyRef] {
+    override def executeInEDT(): AnyRef = joinPoint.proceed()
+  })
+}
+\end{lstlisting}
 
-The operations need to be marked with certain annotations and the runtime system behind the scenes automatically handles the delegation.
+The method \texttt{GuiActionRunner.execute} takes a single \texttt{query} argument and executes it on Swing EDT. If the current thread is already Swing EDT, the method directly executes the argument and returns the value, otherwise it uses \texttt{SwingUtilities.invokeLater} to execute the method and wait for the response. In case the method threw an exception, the stack trace is \textbf{merged} with the invocation stack of the \texttt{GuiActionRunner.execute} method, resulting in an exception that looks just as if the query was executed synchronously on the test thread.
 
-\section {Simulated drag-and-drop}\label{sec:simulated-dnd}
+\subsection{Simulated drag-and-drop}\label{sec:simulated-dnd}
 
-\subsection{Defective DnD with Cacio-tta}\label{sec:defective-dnd}
+\subsubsection{Defective DnD with Cacio-tta}\label{sec:defective-dnd}
 
 FEST-Swing completely supports mouse gesture-based drag-and-drop (DnD) between Swing components, allowing the tests to cover that part of the application's functionality. However, some limitations (see above \fullref{sec:fest-swing-limitations}) often required the tests system to use the alternative graphics stack implementation named Cacio-tta \cite{Cacio_Tta_FEST} with the known limitation that it does not provide the required system-level support for drag and drop. Thus, in such test systems the mouse gesture-based approach of FEST-Swing's does not work.
 
 A solution would be to programmatically trigger the data export and import operations on the Swing components, thus simulating the drag and drop without any mouse movement. However, because of the platform-dependent nature of the Swing (and AWT) DnD subsystem \cite{IntroDnD} \cite{DnDSubsystem}, this is not trivial to be realized.
 
-\subsection{Drag and drop in Swing - Behind the scenes}\label{sec:dnd-swing}
+\subsubsection{Drag and drop in Swing - Behind the scenes}\label{sec:dnd-swing}
 
 Let us say that the user, who is running a Java application, wants to drag some text from a list and deposit it into a text field. Briefly, the drag and drop process consists of the following steps \cite{IntroDnD}:
 
@@ -352,7 +456,7 @@ Let us say that the user, who is running a Java application, wants to drag some 
 
 While this might seem like a daunting process, Swing handles most of the work out of the box. The Swing framework is designed so that the developer plug in the details specific to the components, and the rest is automatic.
 
-\subsection {Simulated drag-and-drop}\label{sec:simulated-dnd}
+\subsubsection {Simulated drag-and-drop}\label{sec:simulated-dnd}
 
 By doing the following steps, the tests can programmatically trigger drag-and-drop:
 \begin{enumerate}
