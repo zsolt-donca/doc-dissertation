@@ -153,9 +153,9 @@ reactions += {
 
 Note that the event handling mechanism relies heavily on Scala's pattern matching. For example, in order to listen to double click events, the first case matches events typed of the case class \texttt{MouseClicked} with the fourth parameter \texttt{clicks} fixed to the value \texttt{2}. 
 
-\subsubsection{Interaction between the components --- example}
+\subsubsection{Interaction between the components}
 
-Figure \ref{fig:scomm_event_propagation} shows the interaction between the components of a directory list when the user changes the current directory. It consists of four steps:
+Figure \ref{fig:scomm_event_propagation} shows the interaction between the components of a directory list when the user changes the current directory. It consists of four stages:
 \begin{enumerate}
 \item As the user interacts with the UI (double clicks on \texttt{listView}), the event is handled by the controller, and the controller makes event stream \texttt{goToIndex} to emit an index (the index of the line where the double clicked).
 \item In the next turn, Scala.React resumes the reactor \texttt{goToIndexReactor}, which gets the index, and queries \texttt{currentDirContents} and \texttt{currentDirectory}, and updates \texttt{currentDirectory} and \texttt{selectedPaths}.
@@ -173,7 +173,65 @@ Figure \ref{fig:scomm_event_propagation} shows the interaction between the compo
 
 \subsection{Copying files}
 
+Copying is according to the customs of orthodox file managers: the user selects files and folders in one panel and copies them to the directory where the other panel is navigated to. Traditionally, this is implemented using modal dialogs: once the user clicks a ``Copy'' button, a modal dialog appears prompting him to confirm the action. When confirmed, another modal dialog appears showing the progress of the copying, and until the copying is over, the user cannot interact with the application. 
 
+Our application, however, takes a slightly different approach: when clicking the ``Copy'' button, a panel at the bottom of the window appears. The panel shows the number of files and folders to be copied based on the selection in the active panel, and also contains a text box with the destination path which is the directory of the inactive panel. As the user subsequently navigates the panels, changes the selection, or switches activity, the contents of the panel are automatically updated. Once the user clicks the ``OK'' button in the panel, the selection and the destination directory is captured, and the system beings the copying: the status bar of the window shows the progress, and at any time, the user can abort the operation by pressing the ``Cancel'' button. Copying does not block the application, it remains usable. After copying is done, the directory lists are refreshed.
+
+\subsubsection{Directories pane}
+
+Because copying is defined such as to copy the selection of the \emph{active} list to the directory of the \emph{inactive} list, we need to be able to refer to the active and to the inactive directory list no matter if the left list is active and the right is inactive or vice-versa. This is where the \emph{directories pane} comes into the picture: it consists of the two directory list panels, keeps track of activity based on UI events, and the model has signal functions that always reflect certain properties of the lists. For example, the signal \texttt{activeCurrentDir} always has the value of the active directory list's path, and it is updated when either the user navigates in the active list or switches to the other list.
+
+The model is as follows:
+
+%\begin{figure}[h!]
+%\centering
+
+\begin{lstlisting}
+class DirectoriesPaneModel(val left: DirectoryListModel,
+                                    val right: DirectoryListModel) {
+
+  val activeList = Var[DirectoryListModel]
+  val inactiveList = Var[DirectoryListModel]
+
+  val activeCurrentDir = Strict { activeList().currentDirectory() }
+  val inactiveCurrentDir = Strict { inactiveList().currentDirectory() }
+  val activeSelection = Strict { activeList().selectionInfo() }
+  val inactiveSelection = Strict { inactiveList().selectionInfo() }
+}
+\end{lstlisting}
+
+%\caption{The directories pane model.}
+%\label{fig:scomm_directories_pane_model}
+%\end{figure}
+
+
+\subsubsection{Copy controller}
+
+Copying is a single reactor: it awaits the user pressing the \emph{Copy} button on the toolbar, displays the panel, awaits the \emph{OK} button, captures the current state of the directories pane and begins copying. The user can abort the copying by pressing the \emph{Cancel} button at any time. After the copying is done or is aborted, the reactor refreshes the disk state and hides the copy panel.
+
+A simplified version of the reactor code is as follows:
+\begin{lstlisting}
+Reactor.loop {
+  self =>      
+    self awaitNext mainWindowView.commandButtons.copyButton()
+    
+    displayPanel(Some(view.panel)) // display the copy panel
+    self.abortOn(view.cancelButton()) { // abort on `Cancel'
+      self awaitNext view.okButton() // wait until `OK'
+
+      val sources: Set[Path] = directoriesPane.activeSelection.now.paths
+      val destinationDir: Path = directoriesPane.inactiveCurrentDir
+      sources.cps foreach { // do the copying
+        ... self pause ... // for `abortOn' to be able to abort the copying
+      }
+    }
+    diskState.refresh()
+    displayPanel(None) // hide the copy panel
+}
+\end{lstlisting}
+
+
+Note that the \texttt{abortOn} operator executes the body and aborts it as soon as the given reactive (the cancel button) emits. This makes it possible to cancel while waiting for the \emph{OK} button or while actually copying the files.
 
 
 \section{Test auditing}\label{sec:test-auditing}
