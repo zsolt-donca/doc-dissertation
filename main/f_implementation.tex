@@ -433,39 +433,6 @@ def executeInEDT(joinPoint: ProceedingJoinPoint) : AnyRef = {
 
 The method \texttt{GuiActionRunner.execute} takes a single \texttt{query} argument and executes it on Swing EDT. If the current thread is already Swing EDT, the method directly executes the argument and returns the value, otherwise it uses \texttt{SwingUtilities.invokeLater} to execute the method and wait for the response. In case the method threw an exception, the stack trace is \textbf{merged} with the invocation stack of the \texttt{GuiActionRunner.execute} method, resulting in an exception that looks just as if the query was executed synchronously on the test thread.
 
-\subsection{Simulated drag-and-drop}\label{sec:simulated-dnd}
-
-\subsubsection{Defective DnD with Cacio-tta}\label{sec:defective-dnd}
-
-FEST-Swing completely supports mouse gesture-based drag-and-drop (DnD) between Swing components, allowing the tests to cover that part of the application's functionality. However, some limitations (see above \fullref{sec:fest-swing-limitations}) often required the tests system to use the alternative graphics stack implementation named Cacio-tta \cite{Cacio_Tta_FEST} with the known limitation that it does not provide the required system-level support for drag and drop. Thus, in such test systems the mouse gesture-based approach of FEST-Swing's does not work.
-
-A solution would be to programmatically trigger the data export and import operations on the Swing components, thus simulating the drag and drop without any mouse movement. However, because of the platform-dependent nature of the Swing (and AWT) DnD subsystem \cite{IntroDnD} \cite{DnDSubsystem}, this is not trivial to be realized.
-
-\subsubsection{Drag and drop in Swing - Behind the scenes}\label{sec:dnd-swing}
-
-Let us say that the user, who is running a Java application, wants to drag some text from a list and deposit it into a text field. Briefly, the drag and drop process consists of the following steps \cite{IntroDnD}:
-
-\begin{enumerate}
-\item The user has selected a row of text in the source component: the list. While holding the mouse button the user begins to drag the text - this initiates the drag gesture.
-\item \label{item:drag-begin} When the drag begins, the list component packages up the data for export and declares what source actions it supports (i.e. COPY, MOVE, or LINK).
-\item As the user drags the data, Swing continuously calculates the location and handles the rendering.
-\item If the user simultaneously holds the Shift and/or Control key during the drag, this user action is also part of the drag gesture. Typically, an ordinary drag requests the MOVE action. Holding the Control key while dragging requests the COPY action, and holding both Shift and Control requests the LINK action.
-\item \label{item:insert-location} Once the user drags the text over the bounds of a text field component, the target is continually polled to see if it will accept or reject the potential drop. As he drags, the target provides feedback by showing the insert location, perhaps an insertion cursor or a high-lighted selection. In the current example, the text field (the current target) allows both re-placement of selected text and insertion of new text.
-\item \label{item:import-data} When the user releases the mouse button, the text component imports the data by inspecting the declared source actions and any user action and then it chooses what it wants out of the available options. In the current example, the text field chooses to insert the new text at the point of the drop.
-\end{enumerate}
-
-While this might seem like a daunting process, Swing handles most of the work out of the box. The Swing framework is designed so that the developer plug in the details specific to the components, and the rest is automatic.
-
-\subsubsection {Simulated drag-and-drop}\label{sec:simulated-dnd}
-
-By doing the following steps, the tests can programmatically trigger drag-and-drop:
-\begin{enumerate}
-\item Trigger an export on the source component (see point \ref{item:drag-begin} above).
-\item Set the proper insert location at the destination component (see point \ref{item:insert-location} above).
-\item Trigger the import of the data (see point \ref{item:import-data} above).
-\end{enumerate}
-
-
 
 
 
