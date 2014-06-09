@@ -4,9 +4,9 @@
 
 \section{Scala}\label{sec:theory_scala}
 
-Scala is a general-purpose object-oriented and functional programming language that runs on the top of the JVM. Besides supporting all the standard OOP concepts (classes, inheritance, encapsulation etc.), Scala has full support for functional programming (including currying, pattern matching, algebraic data types, tail recursion, lazy initialization, immutability etc.) Scala has a unified type system (there is no distinction between primitives and classes), supports anonymous types, operator overloading, optional parameters, named parameters, string interpolation, and so on. All these put together, Scala enables a programmer to develop very concise and small programs.
+Scala is a general-purpose object-oriented and functional programming language that runs on the JVM. Besides supporting all the standard OOP concepts (classes, inheritance, encapsulation etc.), Scala has full support for functional programming (including currying, pattern matching, algebraic data types, tail recursion, lazy initialization, immutability etc.) Scala has a unified type system (there is no distinction between primitives and classes), functions are``first-class citizens'', supports anonymous types, operator overloading, optional parameters, named parameters, string interpolation, and so on. All these put together, Scala enables a programmer to develop very concise and small programs.
 
-Scala and Java have commons roots. Scala's main designer and developer, Martin Odersky, is also known for developing the programming language \emph{Generic Java} (which, with the addition of wildcards, was integrated into \emph{Java 5}), and for the development of the current generation of \emph{javac}, the Java Compiler. Many of Scala's syntax elements were inspired by Java (e.g. the imperative control structures, operators). Many of Scala's design decisions were inspired by criticism over the shortcomings of Java.
+Scala and Java have commons roots. Scala's main designer and developer, Martin Odersky, is also known for developing the programming language \emph{Generic Java} (which, with the addition of wildcards, was integrated into \emph{Java 5}), and for the development of the current generation of \emph{javac}, the Java Compiler. Many of Scala's syntax elements were inspired by Java (e.g. the imperative control structures, operators). Many of Scala's design decisions were inspired by criticism over the shortcomings of Java. \cite{OderskyEtAl2004}
 
 The Scala source code is compiled to Java bytecode, so the resulting executable runs on the Java virtual machine. Existing Java libraries can be directly used in Scala code, and vice versa. 
 
@@ -20,7 +20,7 @@ object HelloWorldApp extends App {
 }
 \end{lstlisting}
 
-Note that contrary to a hello-world application in Java, there is no class declaration and no static main method declaration; instead, a singleton object is created with the keyword \texttt{object} whose body consists of the application. \footnote{In order to be compatible with the JVM, the a method \texttt{static void main(String[])} is generated on the class}.
+Note that contrary to a hello-world application in Java, there is no class declaration and no static main method declaration; instead, a singleton object is created with the keyword \texttt{object} whose body consists of the application. \footnote{In order to be compatible with the JVM, the method \texttt{static void main(String[])} is generated for the class}.
 
 A local variable or a field is declared with the keyword \texttt{val} or \texttt{var}. The keyword \texttt{val} is used for variables that are initialized only once and never change their value, and the keyword \texttt{var} is used for variables whose value changes during the execution. For example:
 
@@ -63,9 +63,33 @@ def f(x: Double) = {
 }
 \end{lstlisting}
 
-It is also possible to omit the return statement. This is because in Scala there is no distinction between expressions and statement, such as \texttt{if}, \texttt{while}, \texttt{try \dots catch} and so on. In Scala, everything is an expression and thus has a value. The value of a block (delimited by the curly braces), is equal to the value of the \emph{last} expression inside the block, and value of the statement \texttt{if (condition) <then-block> else <else-block>} statement is equal to either the value of the ``then-block'' block or the ``else-block'' block, depending on the condition. In Scala code, return statements are typically used only to control the execution flow of a method.
+It is also possible to omit the return statement. This is because in Scala there is no distinction between expressions and statement (such as \texttt{if}, \texttt{while}, \texttt{try \dots catch} and so on). In Scala, everything is an expression and thus has a value. The value of a block (delimited by the curly braces), is equal to the value of the \emph{last} expression inside the block, and value of the statement \texttt{if (condition) <then-block> else <else-block>} statement is equal to either the value of the ``then-block'' block or the ``else-block'' block, depending on the condition. In Scala code, return statements are typically used only to control the execution flow of a method.
 
 \subsection{Type system}
+
+Scala uses a unified type system that includes value types and reference types (see figure \ref{fig:scala_type_hierarchy}). Scala defines the following types:
+\begin{itemize}
+\item \texttt{scala.Any}: any object implicitly extends \texttt{Any}, including the primitive types (int, long etc.) and reference types (classes);
+\item \texttt{scala.AnyVal}: base class for value type, including the standard primitive types and \texttt{Unit}, Scala's equivalent of the Java type \texttt{void};
+\item \texttt{scala.AnyRef}: base class of reference types, equivalent of the Java type \texttt{java.lang.Object};
+\item \texttt{scala.ScalaObject}: any class defined in Scala code implicitly extends this trait;
+\end{itemize}
+
+There are two special-purpose types at the button of the hierarchy:
+\begin{itemize}
+\item \texttt{scala.Null}: this type implicitly extends \emph{any reference type}, and there is only one instance of it, the \texttt{null} reference. Note that \texttt{Null} is not a subtype of the value types; for instance, it's not possible to assign \texttt{null} to a variable of type \texttt{scala.Int}.
+
+\item \texttt{scala.Nothing}: this type implicitly extends \emph{any type}, and \emph{no instances} of this type exist. This type is typically used for two purposes: in covariant types (e.g. \texttt{Nil} is instance of \texttt{List[Nothing]}, which is a subtype of \texttt{List[T]} for any \texttt{[T]}), or as a return type of methods that never return normally.
+\end{itemize}
+
+\begin{figure}[h!] 
+  \centering
+    \includegraphics[width=1\textwidth]{images/scala_type_hierarchy.png}
+  \caption{Scala-Commander.}
+  \label{fig:scala_type_hierarchy}  
+\end{figure}
+
+Note that there are also conversions defined between primitive types, as figure \ref{fig:scala_type_hierarchy} shows using dashed arrows.
 
 \subsubsection{Classes}
 
@@ -90,7 +114,7 @@ object O extends Superclass with Trait {
 }
 \end{lstlisting}
 
-Package-level singleton objects can define fields and methods that are accessible throughout the entire application, and thus are similar to Java's static fields and methods. In addition to that, a singleton object can extend a class or traits,  which is not directly possible in Java.
+Package-level singleton objects can define fields and methods that are accessible throughout the entire application, and thus are similar to Java's static fields and methods. In addition to that, a singleton object can have a base class or can extend traits, which is not directly possible in Java.
 
 A \emph{companion object} is a singleton object that has the same name as a class defined in the same scope. For example:
 
@@ -119,7 +143,7 @@ The above example uses Scala's equivalent of overloading the method call operato
 
 \subsubsection{Traits}
 
-Traits are Scala's replacement for Java interfaces. In Java versions prior to 8, interfaces are highly restricted, able to contain only abstract method declarations. This leads to difficulties with convenience methods (the same methods must be reimplemented in each implementing class), and to inability to extend an interface without breaking compatibility (issue for published libraries). Traits in Scala are similar to an abstract class in Java: besides defining abstract methods (just as an interface), they can provide implementations for methods, and can even have fields. A trait can extend an extend one or more other traits, and even classes. The only limitation of a trait a trait cannot have parameters (constructors).
+Traits are Scala's replacement for Java interfaces. In Java versions prior to 8, interfaces are highly restricted, able to contain only abstract method declarations. This leads to difficulties with convenience methods (the same methods must be reimplemented in each implementing class), and to the inability to add methods to an interface without breaking compatibility (issue for published libraries). Traits in Scala are similar to an abstract class in Java: besides defining abstract methods (just as an interface), they can provide implementations for methods, and can even have fields. A trait can extend an extend one or more other traits, and even classes. The only limitation of a trait a trait cannot have parameters (constructors).
 
 \subsection{Syntactic flexibility}
 Scala has significantly more flexible syntax when compared to Java. This includes:
@@ -183,10 +207,6 @@ In the above example, the method call parenthesis were omitted, and the block wa
 
 This syntactic flexibility allows domain-specific languages to be defined in Scala without the need to extend the compiler. For example, the library \emph{Scala-react} defines a custom control-flow language with the use of higher-order functions, by using extensively using \texttt{apply} and \texttt{update} methods, and by using infix method call syntax for operator methods.
 
-\subsection{Immutability}
-
-\subsubsection{Implicit parameters}
-
 \subsection{Tail recursion}
 
 Tail call optimization is an optimization technique in which method invocation instructions are replaced with jump instructions when the method invocation is immediately followed by a return from the method, effectively meaning that the method call is the last expression in the method body. The purpose if this implementation is to avoid growing the stack unnecessarily, allowing long call chains that would otherwise run out of stack space. A simple example:
@@ -222,7 +242,41 @@ The Scala compiler will automatically optimize any truly tail-recursive method. 
 Note that Scala does not consider a method to be tail-recursive if it can be overridden. Thus the method must either be private, final, on an object (as opposed to a class or trait), or inside another method to be optimized.
 
 \subsection{Functions as types}
-\subsubsection{higher order functions}
+
+In Scala, functions are first-class citizens. For example, one can declare a variable that references a function:
+\begin{lstlisting}
+val plusOne: (Int => Int) = x => x + 1
+println(plusOne(2)) // prints 3
+\end{lstlisting}
+
+In this example, the type of the variable \texttt{plusOne} is \texttt{Int => Int}, which means that it's a function taking an integer and returns an integer. The form \texttt{Int => Int} is practically a syntactic sugar for the generic type \texttt{Function1[Int, Int]}.
+
+\subsubsection{Partial functions}
+
+A partial function in Scala is a function that is only defined for a subset of its input set. For example:
+\begin{lstlisting}
+val fibo: PartialFunction[Int, String] = {
+  case 1 => "one"
+  case 2 => "two"
+  case 3 => "three"
+  case 5 => "five"
+  case 8 => "eight"
+}
+
+println(fibo.isDefinedAt(2) + " " + fibo(2)) // prints: true two
+println(fibo.isDefinedAt(4)) // prints "false"
+
+// prints "one two three five eight"
+(0 to 10).collect(fibo).foreach(x => print(x + " "))
+\end{lstlisting}
+
+The function \texttt{fibonacci} is a partial function taking an \texttt{Int} value and returning \texttt{String}, as is defined only for the first five Fibonacci values. A partial function has two important methods: 
+\begin{itemize}
+\item \texttt{isDefinedAt(x)}: returns true if the partial function is defined for \texttt{x}, and returns false otherwise;
+\item \texttt{apply(x)}: return the value of the function for the given \texttt{x} if the function is defined for \texttt{x}, and throws an exception otherwise.
+\end{itemize}
+
+Partial functions in Scala are used for pattern matching, or as a programmable \emph{switch-case}-like structure. For example, the event handling mechanism of \emph{Scala-Swing} uses partial functions (see section \ref{sec:theory_scala-swing}).
 
 \subsection{Currying}
 
@@ -319,7 +373,7 @@ println(inside) // List(true, false, true)
 
 Now the function \texttt{isInsideMyCircle} already has the value \texttt{radiusSquare} pre-calculated. Note that in this case using the simple multi-parameter list version of currying does not offer the same performance benefits, because Scala cannot automatically transform the function body to extract computation that is dependent only on a subset of the parameters.
 
-\subsubsection{Partial functions}
+\subsubsection{Partially applied functions}
 
 Partial function application and currying are related. One of the significant differences between the two is that a call to a partially applied function returns the result right away, not another function down the currying chain; this distinction can be illustrated clearly for functions whose arity is greater than two.
 
@@ -336,12 +390,6 @@ def sum3(a: Int)(b: Int)(c: Int) = a + b + c
 val sum2: (Int => Int => Int) = sum3(1)
 println(sum2(2)(3)) // prints 6
 \end{lstlisting}
-
-\subsection{Standard functional elements}
-
-\subsection{Algebraic data types and pattern matching}
-
-\subsubsection{tuples}
 
 \section{Scala-swing}\label{sec:theory_scala-swing}
 
