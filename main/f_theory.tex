@@ -276,7 +276,7 @@ The function \texttt{fibonacci} is a partial function taking an \texttt{Int} val
 \item \texttt{apply(x)}: return the value of the function for the given \texttt{x} if the function is defined for \texttt{x}, and throws an exception otherwise.
 \end{itemize}
 
-Partial functions in Scala are used for pattern matching, or as a programmable \emph{switch-case}-like structure. For example, the event handling mechanism of \emph{Scala-Swing} uses partial functions (see section \ref{sec:theory_scala-swing}).
+Partial functions in Scala are used for pattern matching, or as a programmable \emph{switch-case}-like structure. For example, the event handling mechanism of \emph{Scala-Swing} uses partial functions (see section \ref{sec:theory_scala-swing-event-handling}).
 
 \subsection{Currying}
 
@@ -403,6 +403,46 @@ The library provides lightweight wrappers around Swing components, maintaining t
 
 \item The event mechanism is completely reworked around the concept of publishers and reactors. This offers a more homogeneous API for event management than what Java Swing offers.
 \end{itemize}
+
+\subsection{Event handling}\label{sec:theory_scala-swing-event-handling}
+
+Event handling is based around the concepts of \emph{publishers} and \emph{reactors}. Any \texttt{scala.\-swing} component is actually both a publisher that publishes events and a reactor that reacts to events. For efficiency reasons, events of a component are not published directly by the component itself but by members, grouping the events into categories (see below the member \texttt{mouse}).
+
+As each event is a normal Scala object, it has a unique type, which determines how to pattern match on it. Contrast this to Java Swing, where some events are dispatched in two phases, according to their type plus an additional listener method. The following example shows how to listen to mouse click events using Java Swing:
+\begin{lstlisting}
+new JComponent {
+  addMouseListener(new MouseAdapter {
+    @Override
+    def mouseClicked(e: MouseEvent) {
+      System.out.println("Mouse clicked at " + e.getPoint)
+    }
+  })
+}
+\end{lstlisting}
+
+Note that in this case we are using the convenience class \texttt{Mouse\-Adapter} that implements all the methods of the interface \texttt{Mouse\-Listener} with empty implementations. This interface is just one example where we first dispatch by the event's Java type (\texttt{MouseEvent}) and then we refine the match implementing the appropriate method (\texttt{mouseClicked}). The equivalent using \texttt{scala.swing} looks like the following:
+\begin{lstlisting}
+new Component {
+  listenTo(mouse.clicks)
+  reactions += {
+    case e: MouseClicked =>
+      println("Mouse clicked at " + e.point)
+  }
+}
+\end{lstlisting}
+
+Here we rely on the event type (\texttt{MouseClicked}). Since the event classes form hierarchies, we can also very conveniently listen to \emph{any} mouse event:
+\begin{lstlisting}
+  listenTo(mouse.clicks, mouse.moves, mouse.wheel)
+  reactions += {
+    case e: MouseEvent =>
+      println("Mouse event at point " + e.point)
+  }
+\end{lstlisting}
+
+The equivalent using Java Swing would require us to add three listeners (using \texttt{add\-Mouse\-Listener}, \texttt{add\-Mouse\-Motion\-Listener}, \texttt{add\-Mouse\-Wheel\-Listener}) and to implement a total number of \textbf{eight listener methods}, all with the same implementation.
+
+Note that the members \texttt{listenTo} and \texttt{reactions} are defined by the trait \texttt{Reactor}. The member \texttt{reactions} is a mutable list of \emph{partial functions} of type type \texttt{PartialFunction[Event, Unit]}.
 
 \section{Scala CPS Plugin}\label{sec:theory_scala-cps-plugin}
 
