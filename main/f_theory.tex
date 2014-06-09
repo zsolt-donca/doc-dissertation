@@ -444,6 +444,8 @@ The equivalent using Java Swing would require us to add three listeners (using \
 
 Note that the members \texttt{listenTo} and \texttt{reactions} are defined by the trait \texttt{Reactor}. The member \texttt{reactions} is a mutable list of \emph{partial functions} of type type \texttt{PartialFunction[Event, Unit]}.
 
+See figure \ref{fig:example_scala-react-line-drawing} in appendix \ref{chap:scala-react-examples} for a complete example of a \texttt{scala.swing} application listening to mouse events.
+
 \section{Scala CPS Plugin}\label{sec:theory_scala-cps-plugin}
 
 Delimited continuations are a versatile programming tool. Their most important use is based on their ability to suspend and resume sequential code paths in a controlled way. The Scala CPS plugin is a compiler plugin that enables the programmer to have delimited continuations in direct-style code, without much syntactic overhead. This is implemented by the plugin selectively transforming the source code in compile time, driven by annotations and other structures placed into the code by the programmer. Multiple variants of delimited continuations have been described in the literature, and the Scala CPS plugin implements the so-called Danvy and Filinski model, with two primitive operations, \texttt{shift} and \texttt{reset}.
@@ -631,7 +633,7 @@ observe(mouseDown) {
     path = new Path(downPos) // new path with a starting position
     moveObserver = observe(mouseMove) {
       movePos =>
-        path.add(movePos) // add the current position to the path
+        path.lineTo(movePos) // add the current position to the path
         draw(path)
     }
 }
@@ -653,19 +655,21 @@ Ideally, we want to encode a state-machine that can be described informally as f
 \item Once the mouse is released, close and draw the path.
 \end{enumerate}
 
-Scala.React's imperative data-flow language and the concept of \emph{reactors} lets us turn the above steps into a straightforward implementation:
+Scala.React's imperative data-flow language and the concept of \emph{reactors} lets us turn the above steps into a straightforward implementation \footnote{See figure \ref{fig:example_scala-react-line-drawing} in appendix \ref{chap:scala-react-examples} for a complete example}:
 
 \begin{lstlisting}
-Reactor.loop { self =>
-  val initialPos = self await mouseDown
-  val path = new Path(initialPos)
-  self.loopUntil(mouseUp) {
-    val movePos = self awaitNext mouseMove
-    path.add(movePos)
+Reactor.loop {
+  self =>
+    // step 1
+    val path = new Path(self await mouseDown)
+    self.loopUntil(mouseUp) {
+      // step 2
+      val m = self awaitNext mouseMove
+      path.lineTo(m)
+      draw(path)
+    }
+    path.close() // step 3
     draw(path)
-  }
-  path.close()
-  draw(path)
 }
 \end{lstlisting}
 
@@ -709,7 +713,7 @@ val s = Signal { if (c()) a() else b() }
 Signal \texttt{s} should ideally ever depend on only two signal: on signal \texttt{c} and either \texttt{a} or \texttt{b} (depending on \texttt{c}'s value). Therefore, when a node notifies its dependencies of a change, it removes all opaque dependents (and expects them to re-add themselves as needed).
 
 
-\subsubsection{Lifecycle management of observers}
+%\subsubsection{Lifecycle management of observers}
 
 
 
