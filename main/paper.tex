@@ -1,21 +1,12 @@
-% BEÁLLÍTÁSOK - JOBB NEM VÁLTOZTATNI
 \documentclass[final]{ubb_dolgozat}
 \usepackage{definitions}
-%%
 
-% milyen nyelveken akarunk forráskódot megjeleníteni
 \lstloadlanguages{java,scala}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%!!          EZT KELL VÁLTOZTATNI       !!%%%%
-%%     A DOLGOZAT CÍMOLDALÁNAK ELEMEI        %%
-
-%% MELYIK ÉVBEN ADJUK LE
 \submityear{%
 2014
 }
-%% MELYIK HÓNAPBAN ADJUK LE
 \submitmonthHU{%
 Július
 }
@@ -27,18 +18,18 @@ July
 }
 
 \titleHU{%
-Egy Ügyes Vizsgadolgozat
+Implementing an interactive application using delimited continuations in Scala and easing functional testing of Swing applications
 }
 
 % Amennyiben szükséges, az alábbi sorokat ki kell komment-ezni és 
 % beírni a megfelelõ címeket
 
 \titleEN{%
-Implementing an interactive application using a delimited continuation-based framework in Scala and easing functional testing of Swing applications
+Implementing an interactive application using delimited continuations in Scala and easing functional testing of Swing applications
 }
 
 \titleRO{%
-Implementing an interactive application using a delimited continuation-based framework in Scala and easing functional testing of Swing applications
+Implementing an interactive application using delimited continuations in Scala and easing functional testing of Swing applications
 }
 
 \author{%
@@ -49,14 +40,15 @@ Zsolt Donca
 \tutorHU{%
 dr. Csató Lehel, egyetemi docens\\
 %{\large Babe\c{s}--Bolyai Tudományegyetem,\\
-% Matematika és Informatika Kar}% ha különbözik, akkor fel kell tûntetni
+% Matematika és Informatika Kar}
 }
 %%
 \tutorRO{%
 Conf. dr, Lehel Csató\\
-% {\large Universitatea Babe\c{s}--Bolyai,\\ % dacã diferã!!!
+% {\large Universitatea Babe\c{s}--Bolyai,\\
 % Facultatea de Matematic\u{a} \c{s}i Informatic\u{a} }%
 }
+
 %%
 \tutorEN{%
 Assoc. prof. dr. Lehel Csató
@@ -64,37 +56,14 @@ Assoc. prof. dr. Lehel Csató
 % Faculty of Mathematics and Informatics}
 }
 
-
-
-%\usepackage{t1enc}
-%\usepackage{ucs}
-%\usepackage[utf8x]{inputenc}
-
-%\usepackage[pdftex]{graphicx}
-%\usepackage{url}
-%\usepackage{algorithmic}
-%\usepackage{amsmath}
-%\usepackage{amssymb}
-
-%\usepackage[table]{xcolor}
-%\usepackage{listings}
-%\usepackage[colorlinks=true]{hyperref}
-\newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}} % One single link
+% One single link
+\newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1} \nameref*{#1}}} 
 
 \usepackage{parskip}
-
-
-
 \usepackage{float}
 \usepackage{wrapfig}
 
-
-
-%\setcounter{secnumdepth}{3}
-%\setcounter{tocdepth}{3}
-
 % experimentary tabular stuff
-
 \usepackage{array}
 \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 \newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
@@ -112,21 +81,15 @@ Assoc. prof. dr. Lehel Csató
 \begin{document}
 
 
-%% ABSTRAKT
-\begin{abstractEN} % ANGOL VÁLTOZAT
-
-% a lenti részt értelemszerûen ki kell tölteni a dolgozat angol kivonatával.
-% A BEGIN ... END között CSAK A SAJÁT SZÖVEG kell, hogy legyen.
-% Az utolsó mondatot benne kell hagyni, mely által kijelentitek, hogy a munkátok SAJÁT.
-
+\begin{abstractEN}
 
 { \color{gray!60!red}
-	FEST-Logging an extension for the functional GUI testing system FEST-Swing that tests Swing based desktop Java applications or applets. FEST-Logging logs execution details of test suites, helping development, troubleshooting or optimization efforts, easily integrating into existing test systems requiring few code changes.
 
-FEST-Logging is demonstrated with a simple file manager application developed in the functional programming language \emph{Scala}. The application was developed using the library \emph{Scala.React} as a proof-of-concept of the article \emph{Deprecating the Observer Pattern with Scala.React}\cite{DeprecatingObservers}.
+Interactive applications are in an increasing demand, yet their development is a difficult and error-prone in any programming language. We present a file manager application developed using \emph{Scala.React}, an interactive programming library based on delimited continuations in Scala representing a viable and practical alternative to existing solutions. The application was entirely developed in Scala, the object-oriented and functional programming language running on the JVM.
+
+We also present FEST-Logging, an extension for the functional GUI testing system FEST-Swing that tests Swing based desktop Java applications or applets. FEST-Logging logs execution details of test suites, helping development, troubleshooting or optimization efforts, easily integrating into existing test systems requiring few code changes. We demonstrate FEST-Logging through the file manager application.
 
 	\vfill
-  
 }
 
 This work is the result of my own activity. I have neither given nor received unauthorized assistance on this work.
