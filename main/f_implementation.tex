@@ -1,7 +1,7 @@
 
 \chapter{Implementation details}\label{chap:implementation-details}
 
-\section{Scala Commander}
+\section{Scala Commander}\label{sec:impl_scala-commander}
 
 Scala Commander is a simple desktop application built as a proof-of-concept for the libraries \emph{Scala.React} and \emph{Scala-Swing}, and for Scala as a language of choice for development of reactive applications.
 
@@ -237,7 +237,7 @@ Note that the \texttt{abortOn} operator executes the body and aborts it as soon 
 
 
 
-\section{FEST-Logging}\label{sec:test-auditing}
+\section{FEST-Logging}\label{sec:impl_fest-logging}
 
 Test suites testing even relatively complex applications can easily contain some hundred tests. Because UI tests, by their nature, typically take much time, the total run time of an entire test suite is usually important. In order to keep the overall runtime at minimum, it is typical to avoid the creation, initialization and the destruction of the individual UI components for each test (which might also be difficult or impossible depending on the architecture of the application). A possible option is to test entire applications and to reuse the same components between the tests.
 

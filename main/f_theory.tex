@@ -2,7 +2,7 @@
 \chapter{Theoretical background}\label{chap:theory}
 
 
-\section{Scala}
+\section{Scala}\label{sec:theory_scala}
 
 Scala is a general-purpose object-oriented and functional programming language that runs on the top of the JVM. Besides supporting all the standard OOP concepts (classes, inheritance, encapsulation etc.), Scala has full support for functional programming (including currying, pattern matching, algebraic data types, tail recursion, lazy initialization, immutability etc.) Scala has a unified type system (there is no distinction between primitives and classes), supports anonymous types, operator overloading, optional parameters, named parameters, string interpolation, and so on. All these put together, Scala enables a programmer to develop very concise and small programs.
 
@@ -343,7 +343,7 @@ println(sum2(2)(3)) // prints 6
 
 \subsubsection{tuples}
 
-\section{Scala-swing}
+\section{Scala-swing}\label{sec:theory_scala-swing}
 
 Scala-swing is a UI library written in Scala that wraps the Java Swing components with the purpose of providing a simpler, more straightforward and typesafe interface that is more natural to use in Scala. It is meant to be sufficiently close to the Java Swing to appeal to Java programmers with existing Swing experience.\cite{ScalaSwing} The library diverges significantly from Java Swing only on parts that are considered as bad design decisions of Java Swing.
 
@@ -356,7 +356,7 @@ The library provides lightweight wrappers around Swing components, maintaining t
 \item The event mechanism is completely reworked around the concept of publishers and reactors. This offers a more homogeneous API for event management than what Java Swing offers.
 \end{itemize}
 
-\section{Scala CPS Plugin}
+\section{Scala CPS Plugin}\label{sec:theory_scala-cps-plugin}
 
 Delimited continuations are a versatile programming tool. Their most important use is based on their ability to suspend and resume sequential code paths in a controlled way. The Scala CPS plugin is a compiler plugin that enables the programmer to have delimited continuations in direct-style code, without much syntactic overhead. This is implemented by the plugin selectively transforming the source code in compile time, driven by annotations and other structures placed into the code by the programmer. Multiple variants of delimited continuations have been described in the literature, and the Scala CPS plugin implements the so-called Danvy and Filinski model, with two primitive operations, \texttt{shift} and \texttt{reset}.
 
@@ -471,7 +471,7 @@ The paper \cite{CPSTransform} describes some academic use cases (Type-Safe print
 
 
 
-\section{Scala.React}\label{sec:scala-react}
+\section{Scala.React}\label{sec:theory_scala-react}
 
 Programming systems with interactive user interfaces requires a considerable amount of engineering to deal with continuous user input and output, yet the predominant programming models dealing with continuous state change in applications is the observer pattern. The Scala library \emph{Scala.React} offers a reactive data-flow programming model, and by that it solves numerous engineering problems observer pattern-based design faces. Amongst multiple Scala features, this is enabled by the higher order concepts of events and state, enabled by Scala's higher-order functions, and by a data-flow DSL embedded into Scala, enabled by continuation passing style transformation that \emph{Scala} offers. Its design is also heavily based on Scala's \emph{traits}, simplifying the binding of observer-based interfaces to the reactive abstractions.\cite{DeprecatingObservers}
 
@@ -628,7 +628,7 @@ Signal \texttt{s} should ideally ever depend on only two signal: on signal \text
 
 
 
-\section{FEST-Swing}\label{sec:fest-swing}
+\section{FEST-Swing}\label{sec:theory_fest-swing}
 
 FEST (Fixtures for Easy Software Testing) is a collection of libraries whose mission is to simplify software testing. It is composed of various modules, which can be used with TestNG or JUnit. The most significant module is the FEST-Swing module.
 
@@ -708,7 +708,7 @@ However, if the target platform is Windows, there are a whole set of issues, and
 
 To overcome all of these limitations, OpenJDK's project Caciocavallo can be used \cite{Cacio_Tta_FEST} to provide a graphics stack for the Java VM that is completely independent from the environment, eliminating any need for platform-dependent setup for CI systems. It renders everything into a virtual screen (which is simply a BufferedImage object), and is driven solely by AWT Robot events. However, this also has its own limitations; the most important being that drag-and-drop \cite{IntroDnD} is unsupported, thus it needs certain workarounds (see \fullref{sec:simulated-dnd}).
 
-\section{Design patterns}
+\section{Design patterns}\label{sec:theory_design-patterns}
 
 \subsection{Model-View-Controller}\label{sec:model-view-controller}
 
@@ -746,7 +746,7 @@ The purpose of this separation is that the parts can be interchangeable (e.g. mo
 \label{fig:mvc_pattern}
 \end{figure}
 
-\section{Functional testing of an application with a user interface}
+\section{Functional testing of an application with a user interface}\label{sec:theory_functional-ui-testing}
 
 \subsection{User Action and Adapter design pattern}\label{sec:user-actions-adapters}
 

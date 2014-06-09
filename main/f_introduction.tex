@@ -1,51 +1,59 @@
 
 \chapter{Introduction}\label{chap:intro}
 
-\section{Overview}\label{sec:overview}
+Interactive applications are in a continuously increasing demand, driven by the expansion of computing and mobile devices. A reactive application needs to be ``readily responsive to a stimulus'', thus needs to:
+\begin{enumerate}
+\item \textbf{react to events} --- the application needs to have an \emph{event-driven} design;
+\item \textbf{react to load} --- the application needs to scale well as the amount of interaction and data increases;
+\item \textbf{react to failure} --- the application must be resilient to error and needs to recover at all levels;
+\item \textbf{react to users} --- the application must be responsive to the user, regardless of load.
+\end{enumerate}
+There is a growing trend in the programming community over the importance of reactive programming. \cite{ReactiveManifesto}
 
-This document consists of the following parts:
+Development of interactive applications is difficult engineering task: the continuous user input and output, the high number of possible internal states makes it difficult to achieve the above desired properties. The event-driven nature of the applications tend to have a negative effect on the maintainability: the state machines and the inversion of control that is needed to deal with events increase the application's complexity, resulting in code that is possibly difficult to maintain, develop, and is error-prone. 
+
+The Scala library \emph{Scala.React}, developed together with the paper \emph{Deprecating the Observer Pattern with Scala.React} offers a solution to the above problem. Its goal is to introduce multiple reactive programming abstractions enabling an event-driven design using declarative implementations, and together with a high-order data-flow DSL\footnote{Domain-Specific Language} embedded into \emph{Scala} makes it possible to implement complex multi-event logic in a direct imperative style, without the need for inversion of control or to implement state machines. \cite{DeprecatingObservers}
+
+\section{Scala Commander}
+
+We implement a simple desktop application with the goal of demonstrating the capabilities of \emph{Scala.React} in a practical example. The application is \emph{Scala Commander}, a file manager application with a user interface that constantly reacts to user interaction. The reactive abstractions in \emph{Scala.React} enabled the design of the application to consist of simple ``building blocks'' called \emph{signals} to be wired together representing the internal state of the application. The relationship between signals is declarative, and there is no development effort needed for change propagation or to maintain consistency. The logic of the application is implemented using \emph{reactors}, with a data-flow DSL that lets us write logic dealing with multiple events in a direct pseudo-code-like style, significantly reducing the complexity of the code.
+
+\section{FEST-Logging}
+
+Testing of applications user interfaces is also important. The library \emph{FEST-Swing} offers an easy and intuitive way to write tests for \emph{Swing} UIs that are compact, easy to write and read like a specification. However, dealing with large number of tests can be problematic: shared state between individual tests can affect the stability of the tests. 
+
+We also implement \emph{FEST-Logging}, the library extending \emph{FEST-Swing} with the goal of easing the testing of Swing user interfaces. FEST-Logging is an agent running along test suites, gathering information while test run providing insight into what happens in the test suites, helping maintenance and troubleshooting of failed tests. FEST-Logging gathers information on the tests such as total duration and what actions did the test execute (along with the actual \emph{arguments}). It also takes screenshots of failed tests, and optionally can create a ``movie'' of the tests by taking screenshot after each test action.
+
+To ease development of tests, \emph{FEST-Logging} is integrated with \emph{Cacio-tta}, a graphics stack that enables the tests to run in background, with drag-and-drop support. There is also a simple annotation-based feature that provides automatic delegation of UI-related operations to the Swing EDT thread.
+
+\section{The structure of this paper}
+
+In chapter \ref{chap:theory}, we present the theoretical background necessary to understand the applications \emph{Scala Commander} and \emph{FEST-Logging}:
 \begin{itemize}
-\item a brief explanation of the test framework (\fullref{sec:fest-swing})
-\item a common design pattern associated with UI tests (\fullref{sec:user-actions-adapters})
-\item the features of the extension framework
-	\begin{itemize}
-	\item \fullref{sec:test-auditing}
-	\item \fullref{sec:edt-dispatch}
-	\item \fullref{sec:simulated-dnd}
-	\end{itemize}
-\item \fullref{sec:nfr}
+\item In section \ref{sec:theory_scala} we give a generic overview of Scala, the object-functional programming language. Our goal is to give a quick overview of the language constructs in Scala, and to present the most important features that the concepts in \emph{Scala.React} or in \emph{Scala Commander} rely on. % \emph{Scala.React} and \emph{Scala Commander} in particular is made possible by the highly extensible and feature-rich nature of \emph{Scala}, the object-functional programming language.
+
+\item In section \ref{sec:theory_scala-swing} we present \emph{Scala-Swing}, a Scala library built on \emph{Java Swing}, the primary Java GUI widget toolkit. \cite{SwingWiki} Scala Commander uses Scala-Swing to implement the user interface.
+
+\item In section \ref{sec:theory_scala-cps-plugin}, we present the \emph{Scala CPS plugin}, a compiler plugin providing delimited continuations using a continuation passing style transformation. These delimited continuations make it possible for the Scala.React data-flow DSL to suspend and resume the control flow in the reactors.
+
+\item In section \ref{sec:theory_scala-react}, we present the library \emph{Scala.React}, its main concepts and some implementation details.
+
+\item In section \ref{sec:theory_fest-swing}, we present the library \emph{FEST-Swing} that provides functional testing for Swing user interfaces.
+
+\item In section \ref{sec:theory_design-patterns}, we present the Model-View-Controller design pattern that Scala Commander is based on.
+
+\item In section \ref{sec:theory_functional-ui-testing}, we present a design pattern commonly associated with testing of user interfaces.
 \end{itemize}
 
-\noindent The main features of the extension framework are the following:
+In chapter \ref{chap:implementation-details}, we present the implementation details of the two main applications developed for this paper:
 \begin{itemize}
-\item test auditing (\fullref{sec:test-auditing}):
-	\begin{itemize}
-	\item the goal is to ease the troubleshooting of non-independent tests by providing details of the test runs
-	\item intended to log runtime data (e.g. arguments of the method calls)
-	\item seamlessly integrates into the various layers of the tests (i.e. test, user action, adapter, fixture, driver, robot)
-	\item allows to create a movie for a test (e.g. creating screenshots after each user action of a test)
-	\item reports the audited data in easy-to-use output formats (e.g. interactive HTML, with filtering and sorting)
-	\end{itemize}
+\item In section \ref{sec:impl_scala-commander}, we present \emph{Scala Commander}, the file manager application demonstrating the capabilities of \emph{Scala.React}.
+\item In section \ref{sec:impl_fest-logging}, we present \emph{FEST-Logging}, the library extending \emph{FEST-Swing} with the goal of easing the testing of Swing user interfaces.
 \end{itemize}
 
-\begin{itemize}
-\item automatic thread dispatch (\fullref{sec:edt-dispatch}):
-	\begin{itemize}
-	\item the goal is to simplify the development of thread-safe tests by automatically delegating operations to Swing EDT
-	\item the operations need to be marked with certain annotations and the runtime system behind the scenes automatically handles the delegation
-	\end{itemize}
 
-\item simulated drag-and-drop (\fullref{sec:simulated-dnd}):
-	\begin{itemize}
-	\item the goal is to solve a major problem for Continuous Integration systems
-	\end{itemize}
-\end{itemize}
 
-\noindent The implementation details are the following:
 
-\begin{itemize}
-\item Scala: as a language of choice for implementing the framework, while keeping full compatibility with Java systems;
-\item Spring: configuration, IoC and AOP capabilities;
-\item AspectJ: aspects implementing the auditing (e.g. by altering the test methods, user actions etc.)
-\item Mockito: while primarily used for testing (for mocking dependencies), also can be used to mock certain classes of the AWT drag-and-drop system, with the purpose of simulated drag-and-drop by programmatically triggering data export and import.
-\end{itemize}
+
+
+
