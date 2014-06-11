@@ -1,7 +1,7 @@
 
-\chapter{Implementation details}\label{chap:implementation-details}
+% \chapter{Implementation details}\label{chap:implementation-details}
 
-\section{Scala Commander}\label{sec:impl_scala-commander}
+\chapter{Scala Commander}\label{chap:impl_scala-commander}
 
 Scala Commander is a simple desktop application built as a proof-of-concept for the libraries \emph{Scala.React} and \emph{Scala-Swing}, and for Scala as a language of choice for development of reactive applications.
 
@@ -20,7 +20,7 @@ The application is built on \emph{Scala.React} and on the the Model-View-Control
 
 To demonstrate the design choices, we describes two components in greater detail: the \emph{directory list} and the file system operation \emph{copy}.
 
-\subsection{The directory list}
+\section{The directory list}
 
 The main window consists of two directory list components: the \emph{left} list and the \emph{right} list. Both serve the same purpose: the user can see the contents of a directory, can navigate to a subdirectory or to the parent directory, and can select files and folders in the current directory. At any point of time, the directory list that the user last used is the \emph{active} list, while the other list is the \emph{inactive} list. The operations on the toolbar are always executed on the selection of the active list, and the destination of the operation (e.g. copy or move) is the directory of the inactive list.
 
@@ -48,7 +48,7 @@ The design of the implementation is according to the Model-View-Controller desig
 \end{figure}
 
 
-\subsubsection{Model}
+\subsection{Model}
 
 The directory list model (class \texttt{DirectoryListModel}) holds the state of a navigable list and defines a set of operations. The operations alter the internal state of the model (e.g. change the current directory, or change selection). The model is entirely built around Scala.React concepts, such as signal variables, signal functions, event streams and reactors.
 
@@ -83,7 +83,7 @@ Finally, the model consists of four reactors that glue together the model's stat
 \item \texttt{activeReactor} --- awaits the next value of the signal \texttt{active}, and if it is set to false, clears the selection (sets the variable \texttt{selectedPaths} to the empty set).
 \end{itemize}
 
-\subsubsection{View}
+\subsection{View}
 
 \begin{wrapfigure}{r}{0.4\textwidth}
   \centering
@@ -122,7 +122,7 @@ The view listens to changes of the following model signals:
 \item \texttt{active} --- updates the background of \texttt{currentDirPanel}.
 \end{itemize}
 
-\subsubsection{Controller}
+\subsection{Controller}
 
 The controller (class \texttt{DirectoryListController}) listens to the events of the view's components (extends the trait \texttt{scala.swing.Reactor}), and triggers the appropriate event sources from the model. 
 
@@ -153,7 +153,7 @@ reactions += {
 
 Note that the event handling mechanism relies heavily on Scala's pattern matching. For example, in order to listen to double click events, the first case matches events typed of the case class \texttt{MouseClicked} with the fourth parameter \texttt{clicks} fixed to the value \texttt{2}. 
 
-\subsubsection{Interaction between the components}
+\subsection{Interaction between the components}
 
 Figure \ref{fig:scomm_event_propagation} shows the interaction between the components of a directory list when the user changes the current directory. It consists of four stages:
 \begin{enumerate}
@@ -171,13 +171,13 @@ Figure \ref{fig:scomm_event_propagation} shows the interaction between the compo
 \end{figure}
 
 
-\subsection{Copying files}
+\section{Copying files}
 
 Copying is according to the customs of orthodox file managers: the user selects files and folders in one panel and copies them to the directory where the other panel is navigated to. Traditionally, this is implemented using modal dialogs: once the user clicks a ``Copy'' button, a modal dialog appears prompting him to confirm the action. When confirmed, another modal dialog appears showing the progress of the copying, and until the copying is over, the user cannot interact with the application. 
 
 Our application, however, takes a slightly different approach: when clicking the ``Copy'' button, a panel at the bottom of the window appears. The panel shows the number of files and folders to be copied based on the selection in the active panel, and also contains a text box with the destination path which is the directory of the inactive panel. As the user subsequently navigates the panels, changes the selection, or switches activity, the contents of the panel are automatically updated. Once the user clicks the ``OK'' button in the panel, the selection and the destination directory is captured, and the system beings the copying: the status bar of the window shows the progress, and at any time, the user can abort the operation by pressing the ``Cancel'' button. Copying does not block the application, it remains usable. After copying is done, the directory lists are refreshed.
 
-\subsubsection{Directories pane}
+\subsection{Directories pane}
 
 Because copying is defined such as to copy the selection of the \emph{active} list to the directory of the \emph{inactive} list, we need to be able to refer to the active and to the inactive directory list no matter if the left list is active and the right is inactive or vice-versa. This is where the \emph{directories pane} comes into the picture: it consists of the two directory list panels, keeps track of activity based on UI events, and the model has signal functions that always reflect certain properties of the lists. For example, the signal \texttt{activeCurrentDir} always has the value of the active directory list's path, and it is updated when either the user navigates in the active list or switches to the other list.
 
@@ -205,7 +205,7 @@ class DirectoriesPaneModel(val left: DirectoryListModel,
 %\end{figure}
 
 
-\subsubsection{Copy controller}
+\subsection{Copy controller}
 
 Copying is a single reactor: it awaits the user pressing the \emph{Copy} button on the toolbar, displays the panel, awaits the \emph{OK} button, captures the current state of the directories pane and begins copying. The user can abort the copying by pressing the \emph{Cancel} button at any time. After the copying is done or is aborted, the reactor refreshes the disk state and hides the copy panel.
 
@@ -237,7 +237,7 @@ Note that the \texttt{abortOn} operator executes the body and aborts it as soon 
 
 
 
-\section{FEST-Logging}\label{sec:impl_fest-logging}
+\chapter{FEST-Logging}\label{chap:impl_fest-logging}
 
 Test suites testing even relatively complex applications can easily contain some hundred tests. Because UI tests, by their nature, typically take much time, the total run time of an entire test suite is usually important. In order to keep the overall runtime at minimum, it is typical to avoid the creation, initialization and the destruction of the individual UI components for each test (which might also be difficult or impossible depending on the architecture of the application). A possible option is to test entire applications and to reuse the same components between the tests.
 
@@ -247,7 +247,7 @@ Unstable test system can very difficult to cope with. Tests can seemingly fail r
 
 Understanding the data flow of all the tests of an entire test suite, knowing all the operations that were made on the application's state, along with screenshots made after all important steps can greatly reduce the debugging efforts of an unstable test suite and can benefit the test development and maintenance process.
 
-\subsection{FEST-Logging: AspectJ-based auditing}
+\section{AspectJ-based auditing}
 
 We introduce \emph{FEST-Logging}, an AspectJ-based solution that gathers information of the test methods and on annotated methods in the user code. The gathered information (method arguments, screenshots) are visualized in the form of a table and the entire execution tree can be inspected.
 
@@ -307,7 +307,7 @@ class FESTLoggingAspect {
 \label{fig:fest-logging-pointcuts}
 \end{figure}
 
-\subsubsection{Test auditing: building the method stack}
+\subsubsection{Building the method stack}
 
 Figure \ref{fig:fest-logging-auditMethods} shows the advice responsible for auditing. It calls the method \texttt{enterTestMethod}, proceeds the join point, and finally calls the \texttt{exitTestMethod}. This is so the class \texttt{MethodCallStack}, as the name suggests, can keep a stack of objects representing the advised methods.
 
@@ -410,7 +410,7 @@ Method call & Arguments & Returns \\ [0.5ex] % inserts table heading
 \label{fig:formatted_audited_data_report}
 \end{table}
 
-\subsection{Automatic EDT dispatch}\label{sec:edt-dispatch}
+\section{Automatic EDT dispatch}\label{sec:edt-dispatch}
 
 The threading model of Swing recommends that all Swing-component-related operations are to be executed on the Swing EDT thread, including those of the tests. While it is always thread-safe to use the FEST Swing fixtures, there are some cases when the methods exposed in a fixture are not enough and one needs to access the underlying component. Direct interaction with Swing components with the purpose of testing must be delegated to the EDT thread (unless the tests can become unstable). Fortunately, FEST-Swing offers the class \texttt{GuiActionRunner} that provides a simple way to execute tasks or queries on the EDT, such as:
 \begin{lstlisting}
@@ -432,7 +432,7 @@ def requireCurrentDirBackground(color: Color): Unit = {
 }
 \end{lstlisting}
 
-\subsubsection{Implementation}\label{sec:edt-dispatch}
+\subsection{Implementation}\label{sec:edt-dispatch}
 
 We define a pointcut that matches methods annotated with \texttt{ExecuteInEDT}, and we use an \emph{around advice} to delegate the invocation to Swing EDT:
 \begin{lstlisting}
