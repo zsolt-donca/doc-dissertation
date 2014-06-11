@@ -412,9 +412,25 @@ Method call & Arguments & Returns \\ [0.5ex] % inserts table heading
 
 \subsection{Automatic EDT dispatch}\label{sec:edt-dispatch}
 
-The threading model of Swing recommends that all Swing-component-related operations are to be executed on the Swing EDT thread, including those of the tests. It is the test developer's responsibility to respect this rule, and thus to delegate all such work to the EDT thread. There are two options: one can either use \texttt{Swing\-Utilities.invoke\-And\-Wait}, or can use the more convenient class \texttt{GuiActionRunner} offered by FEST-Swing. This, in either case, leads to much boilerplate code in the adapter layer and is error-prone.
+The threading model of Swing recommends that all Swing-component-related operations are to be executed on the Swing EDT thread, including those of the tests. While it is always thread-safe to use the FEST Swing fixtures, there are some cases when the methods exposed in a fixture are not enough and one needs to access the underlying component. Direct interaction with Swing components with the purpose of testing must be delegated to the EDT thread (unless the tests can become unstable). Fortunately, FEST-Swing offers the class \texttt{GuiActionRunner} that provides a simple way to execute tasks or queries on the EDT, such as:
+\begin{lstlisting}
+def requireCurrentDirBackground(color: Color) = {
+  GuiActionRunner.execute(new GuiTask {
+    override def executeInEDT(): Unit = {
+      assertEquals(color, currentDirPanel.component().getBackground)
+    }
+  })
+}
+\end{lstlisting}
+It is even possible to do assertion in a \texttt{GuiTask} because if the assertion fails, the \texttt{Assertion\-Error} exception is propagated back the test thread with a merged stack trace that helps debugging. However, this is still much boilerplate code to write just for a simple assertion.
 
-To offer a solution to this problem, we present the annotation \texttt{ExecuteInEDT} (part of \emph{FEST-Logging} library). When an annotated method is called on the test thread, the method is seamlessly and transparently delegated to the Swing EDT thread, and the test thread awaits the result (the return value or the exception). This leads to less effort from the developer's side, and at the same time, increases security on the tests' correctness.
+To offer a solution to this problem, we present the annotation \texttt{ExecuteInEDT} as part of \emph{FEST-Logging} library. When an annotated method is called on the test thread, the method is seamlessly and transparently delegated to the Swing EDT thread, and the test thread awaits the result (the return value or the exception). This leads to less effort from the developer's side, and at the same time, increases security on the tests' correctness. The above example is equivalent to the following:
+\begin{lstlisting}
+@ExecuteInEDT
+def requireCurrentDirBackground(color: Color): Unit = {
+  assertEquals(color, currentDirPanel.component().getBackground)
+}
+\end{lstlisting}
 
 \subsubsection{Implementation}\label{sec:edt-dispatch}
 
@@ -434,9 +450,9 @@ def executeInEDT(joinPoint: ProceedingJoinPoint) : AnyRef = {
 The method \texttt{GuiActionRunner.execute} takes a single \texttt{query} argument and executes it on Swing EDT. If the current thread is already Swing EDT, the method directly executes the argument and returns the value, otherwise it uses \texttt{SwingUtilities.invokeLater} to execute the method and wait for the response. In case the method threw an exception, the stack trace is \textbf{merged} with the invocation stack of the \texttt{GuiActionRunner.execute} method, resulting in an exception that looks just as if the query was executed synchronously on the test thread.
 
 
+\section{Case study: Scala Commander}
 
-
-
+We are using FEST-Logging for the UI-tests of Scala Commander. 
 
 
 
