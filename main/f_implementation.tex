@@ -349,6 +349,8 @@ When the execution reaches back the class \texttt{CacioFESTLoggingRunner}, the v
 
 There are two advices taking screenshots: \texttt{take\-Screen\-shot\-Of\-Failed\-Test} and \texttt{take\-Screen\-shots\-Of\-Test\-Actions}. Both rely on the object \texttt{MethodCallStack}: they take the topmost \texttt{Running\-Execution} object on the stack, take the screenshots into files and assign the appropriate fields in the \texttt{Running\-Execution} object. This is based on AspectJ applying multiple advices on the same method using well-defined precedence rules (which is declaration precedence in this case).
 
+For performance reasons, FEST-Logging takes the screenshots in two steps: first, it takes a screenshot of the desktop in the form of a \texttt{BufferedImage} object on the Swing EDT thread, and then it uses a \emph{Swing worker} to saves the screenshot on a thread pool to a PNG file. This way, it is possible to gain a significant performance improvement when multiple CPU cores are available (see \fullref{sec:fest-logging_case-study})
+
 \subsection {Formatting the audited data}
 
 Since the runtime data set can be huge for long tests runs, it is important to provide views that presents the data in an easily accessible, intuitive and adaptive form. 
@@ -450,9 +452,50 @@ def executeInEDT(joinPoint: ProceedingJoinPoint) : AnyRef = {
 The method \texttt{GuiActionRunner.execute} takes a single \texttt{query} argument and executes it on Swing EDT. If the current thread is already Swing EDT, the method directly executes the argument and returns the value, otherwise it uses \texttt{SwingUtilities.invokeLater} to execute the method and wait for the response. In case the method threw an exception, the stack trace is \textbf{merged} with the invocation stack of the \texttt{GuiActionRunner.execute} method, resulting in an exception that looks just as if the query was executed synchronously on the test thread.
 
 
-\section{Case study: Scala Commander}
+\section{Case study: Scala Commander}\label{sec:fest-logging_case-study}
 
-We are using FEST-Logging for the UI-tests of Scala Commander. 
+To demonstrate the performance implications of using FEST-Logging, we applied it over the UI tests of Scala Commander. 
+
+Scala Commander has 15 tests, grouped into four IT cases:
+\begin{enumerate}
+\item \texttt{CopyITCase} --- contains four tests, copying a handful of small files and directories and checks the application's state and the disk state;
+\item \texttt{DirectoriesPaneITCase} --- contains seven tests, checking the behavior of the directories pane, ensuring that the user is able to make selections, enter directories, go back to the parents, and able to switching tabs;
+\item \texttt{NewFolderITCase} --- contains three tests, checking the behavior of the application when creating new folders;
+\item \texttt{OperationsITCase} --- contains two tests, checking the generic behavior of the file system operations panel.
+\end{enumerate}
+
+The total number of test actions executed while running the test suite is 115, and the total number of audited method invocations is 1067 (see figure \ref{fig:stats-scomm-test-suite}).
+
+\begin{figure}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|} \hline
+  IT Cases & Tests & Test actions & Audited methods \\ \hline
+  4 & 15 & 115 & 1067 \\ \hline
+\end{tabular}
+\vspace{10px}
+\caption{The number of items in the Scala Commander test suite.}
+\label{fig:stats-scomm-test-suite}
+\end{figure}
+
+To demonstrate the performance implications of using FEST-Logging, we compared the execution time of the tests running without FEST-Logging (but still using Cacio-tta) with the execution time of the tests running with FEST-Logging in two modes: with method auditing only, and with both auditing and screenshots of the test actions. In each case, we used the average execution time of three consecutive runs.
+
+The results are in figure \ref{fig:stats-scomm-test-suite-executions}. The performance drawback of using auditing only is relatively low (2.11\%). Using both auditing and taking screenshots of the 115 test actions takes a somewhat higher 5\% of the total execution time, thanks to the parallel saving of the screenshots. In the case when it is not practically possible to save the screenshots in parallel to the tests, the total execution time grows to a significant 50.17 seconds, FEST-Logging taking 21.48\% of the total time.
+
+\begin{figure}[h!]
+\centering
+\begin{tabular}{|l|c|l|} \hline
+  \textbf{Execution type} & \textbf{Time} & \textbf{Cost} \\ \hline \hline
+  Without FEST-Logging & 41.30 s & \\ \hline
+  FEST-Logging with auditing only & 42.17 s & 0.87 s (2.11\%) \\ \hline 
+  FEST-Logging with auditing and screenshots & 43.36 s & 2.06 s (5.00\%) \\ \hline
+  FEST-Logging with auditing and screenshots (single-threaded) & 50.17 s & 8.87 s (21.48\%) \\ \hline
+\end{tabular}
+\vspace{10px}
+\caption{The execution time of the Scala Commander test suite in different setups; in each case, the time is the average execution time of three executions.}
+\label{fig:stats-scomm-test-suite-executions}
+\end{figure}
+
+
 
 
 
