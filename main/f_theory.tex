@@ -71,7 +71,7 @@ Scala uses a unified type system that includes value types and reference types (
 \begin{itemize}
 \item \texttt{scala.Any}: any object implicitly extends \texttt{Any}, including the primitive types (int, long etc.) and reference types (classes);
 \item \texttt{scala.AnyVal}: base class for value type, including the standard primitive types and \texttt{Unit}, Scala's equivalent of the Java type \texttt{void};
-\item \texttt{scala.AnyRef}: base class of reference types, equivalent of the Java type \texttt{java.lang.Object};
+\item \texttt{scala.AnyRef}: base class of reference types, the equivalent of \texttt{java.lang.Object};
 \item \texttt{scala.ScalaObject}: any class defined in Scala code implicitly extends this trait;
 \end{itemize}
 
@@ -551,7 +551,7 @@ Because the compiler needs to transform CPS code, non-CPS code cannot (neither d
 The paper \cite{CPSTransform} describes some academic use cases (Type-Safe printf, Direct-Style Monads, Concurrency Primitives, Actors, Functional Reactive Programming, Asynchronous IO). At the time of writing, the following widely available Scala libraries using delimited continuations were available:
 \begin{itemize}
 \item Akka Dataflow Concurrency --- Akka implements Oz-style dataflow concurrency by using a special API for \emph{Futures} that enables a complementary way of writing synchronous-looking code that in reality is asynchronous. \cite{AkkaDataflow}
-\item Scala.React --- A reactive programming library for Scala developed based on the paper \cite{DeprecatingObservers}.
+\item Scala.React --- A reactive programming library for Scala developed based on the paper \cite{EPFL-REPORT-176887}.
 
 \end{itemize}
 
@@ -563,9 +563,9 @@ The paper \cite{CPSTransform} describes some academic use cases (Type-Safe print
 
 \section{Scala.React}\label{sec:theory_scala-react}
 
-Programming systems with interactive user interfaces requires a considerable amount of engineering to deal with continuous user input and output, yet the predominant programming models dealing with continuous state change in applications is the observer pattern. The Scala library \emph{Scala.React} offers a reactive data-flow programming model, and by that it solves numerous engineering problems observer pattern-based design faces. Amongst multiple Scala features, this is enabled by the higher order concepts of events and state, enabled by Scala's higher-order functions, and by a data-flow DSL embedded into Scala, enabled by continuation passing style transformation that \emph{Scala} offers. Its design is also heavily based on Scala's \emph{traits}, simplifying the binding of observer-based interfaces to the reactive abstractions.\cite{DeprecatingObservers}
+Programming systems with interactive user interfaces requires a considerable amount of engineering to deal with continuous user input and output, yet the predominant programming models dealing with continuous state change in applications is the observer pattern \cite{Gamma:1995:DPE:186897}. The Scala library \emph{Scala.React} offers a reactive data-flow programming model, and by that it solves numerous engineering problems observer pattern-based design faces. Amongst multiple Scala features, this is enabled by the higher order concepts of events and state, enabled by Scala's higher-order functions, and by a data-flow DSL embedded into Scala, enabled by continuation passing style transformation that \emph{Scala} offers. Its design is also heavily based on Scala's \emph{traits}, simplifying the binding of observer-based interfaces to the reactive abstractions.\cite{EPFL-REPORT-176887}
 
-TODO: detailed list of benefits of using scala.react when compared to traditional observer pattern - each should be explained below
+Object-oriented reactive applications traditionally implement reactivity by using the Observer pattern  \cite{EPFL-REPORT-176887}\cite{rescala:2014}. The observer pattern relies on the concept of \emph{inversion of control} to decouple the observers from the subjects (observables), reversing the intuitive flow of the application and making the code harder to understand, analyze and maintain. Typical implementations often require a lot of boilerplate code, further complicating the code of the program. Separation of concern is often hard to achieve because the observer logic typically needs to be mixed with the application's business logic. It is difficult to maintain data consistency because the observer pattern does not incorporate the concept of transactionality or atomicity when notifying observers of changes. Also, the observer pattern enforces mutability and relying on side-effects, enforcing exclusively imperative an programming style. The paper \cite{EPFL-REPORT-176887} argues how Scala.React resolve these and many other issues with the observer pattern.
 
 \subsection{Event streams}
 
@@ -722,7 +722,7 @@ Signal \texttt{s} should ideally ever depend on only two signal: on signal \text
 
 \section{FEST-Swing}\label{sec:theory_fest-swing}
 
-FEST (Fixtures for Easy Software Testing) is a collection of libraries whose mission is to simplify software testing. It is composed of various modules, which can be used with TestNG or JUnit. The most significant module is the FEST-Swing module.
+FEST (Fixtures for Easy Software Testing) is a collection of libraries whose mission is to simplify software testing. It is composed of various modules, which can be used with the unit testing frameworks JUnit \cite{JUnit} or TestNG. The most significant module is the FEST-Swing module.
 
 The Swing module provides a simple and intuitive API for functional testing of Swing user interfaces, resulting in tests that are compact, easy to write, and read like a specification. Tests written using FEST-Swing are also robust. FEST simulates actual user gestures at the operating system level, ensuring that the application will behave correctly in front of the user. It also provides a reliable mechanism for GUI component lookup that ensures that changes in the GUI's layout or look-and-feel will not break the tests \cite{FESTMain}.
 
@@ -804,7 +804,7 @@ To overcome all of these limitations, OpenJDK's project Caciocavallo can be used
 
 \subsection{Model-View-Controller}\label{sec:model-view-controller}
 
-Model-View-Controller is an architectural pattern for implementing user interfaces. It divides an application into three connected parts:
+Model-View-Controller is an architectural pattern for implementing user interfaces\cite{krasner_description_1988}. It divides an application into three connected parts:
 \begin{itemize}
 \item \textbf{Model} --- consists of the application data, business rules, logic and functions;
 \item \textbf{View} --- consists of the visual representation of the data, along with components that a user can interact with (e.g. consists of the Java Swing components);

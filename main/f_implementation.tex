@@ -5,7 +5,7 @@
 
 Scala Commander is a simple desktop application built as a proof-of-concept for the libraries \emph{Scala.React} and \emph{Scala-Swing}, and for Scala as a language of choice for development of reactive applications.
 
-Scala Commander a \emph{orthodox file manager} application (see figure \ref{fig:scomm_main}). The center of the window consists of two panels (directory lists) each showing the contents of one directory. The user can navigate to an arbitrary directory, can select files and folders, and can execute operations on the selection such as copying, moving, or deletion. The bottom of the window is for file system operations: there is a toolbar with a list of buttons representing file system operations, and whenever a button is clicked, a helper panel appears that prompts the user to confirm the action.
+Scala Commander is an \emph{orthodox file manager} application (see figure \ref{fig:scomm_main}). The center of the window consists of two panels (directory lists) each showing the contents of one directory. The user can navigate to an arbitrary directory, can select files and folders, and can execute operations on the selection such as copying, moving, or deletion. The bottom of the window is for file system operations: there is a toolbar with a list of buttons representing file system operations, and whenever a button is clicked, a helper panel appears that prompts the user to confirm the action.
 
 \begin{figure}[h!] 
   \centering
@@ -24,7 +24,7 @@ To demonstrate the design choices, we describes two components in greater detail
 
 The main window consists of two directory list components: the \emph{left} list and the \emph{right} list. Both serve the same purpose: the user can see the contents of a directory, can navigate to a subdirectory or to the parent directory, and can select files and folders in the current directory. At any point of time, the directory list that the user last used is the \emph{active} list, while the other list is the \emph{inactive} list. The operations on the toolbar are always executed on the selection of the active list, and the destination of the operation (e.g. copy or move) is the directory of the inactive list.
 
-The design of the implementation is according to the Model-View-Controller design pattern (see figure \ref{fig:mvc_pattern}). The implementation is heavily based on Scala.React concepts, resulting in significantly reduced code length and complexity, as there is no need care for event propagation, dependencies between variables, consistency, and so on.
+The design of the implementation is according to the Model-View-Controller design pattern (see figure \ref{fig:scomm_mvc_pattern}). The implementation is heavily based on Scala.React concepts, resulting in significantly reduced code length and complexity, as there is no need care for event propagation, dependencies between variables, consistency, and so on.
 
 % The directory list is a list component on the UI that displays the contents of a certain directory. The user can navigate to any subdirectory or can navigate to the parent directory. Navigation automatically updates the list. At any time, the user can select a list of files and folders and do operations on them: copy, move, delete, either by using the buttons on the toolbar or by mouse gesture (drag and drop).
 
@@ -44,7 +44,7 @@ The design of the implementation is according to the Model-View-Controller desig
 \umlVHdep{DiskState}{DirectoryListModel}
 \end{tikzpicture}
 \caption{The directory list components.}
-\label{fig:mvc_pattern}
+\label{fig:scomm_mvc_pattern}
 \end{figure}
 
 
@@ -89,10 +89,10 @@ Finally, the model consists of four reactors that glue together the model's stat
   \centering
     \includegraphics[width=0.35\textwidth]{images/scala-commander-directoryListView.png}
   \caption{The directory list view and its subcomponents.}
-  \label{fig:scomm_main}  
+  \label{fig:scomm_directoryListView}  
 \end{wrapfigure}
 
-The directory list view (class \texttt{DirectoryListView}) is responsible for visualizing the model. It is a \texttt{scala.swing.BorderPanel}, and contains four subcomponents (figure \ref{fig:scomm_main}):
+The directory list view (class \texttt{DirectoryListView}) is responsible for visualizing the model. It is a \texttt{scala.swing.BorderPanel}, and contains four subcomponents (figure \ref{fig:scomm_directoryListView}):
 \begin{itemize}
 \item \texttt{currentDirLabel}: a label displaying the full path of the current directory (marked as \texttt{1});
 \item \texttt{currentDirPanel}: the panel containing the label \texttt{currentDirLabel}; the panel's background is blue for the active list and gray for the inactive list (marked as \texttt{2});
@@ -235,6 +235,11 @@ Reactor.loop {
 Note that the \texttt{abortOn} operator executes the body and aborts it as soon as the given reactive (the cancel button) emits. This makes it possible to cancel while waiting for the \emph{OK} button or while actually copying the files.
 
 
+\section{Conclusion}
+
+In this chapter, we presented the most important implementation details of Scala Commander, a design based on the reactive framework Scala.React. Through the example of the \emph{directory lists}, we presented how an MVC-based application can take advantage of the reactive abstractions of Scala.React, such as \emph{event streams}, \emph{signals}, and \emph{reactors}, and we have seen how the automatic change propagation between dependent signals effortlessly keeps the state of the application consistent and up-to-date. Through the example of copy, we have seen how a \emph{reactor} can be used to implement a relatively complex event-driven logic in a direct, imperative style. 
+
+
 
 
 \chapter{FEST-Logging}\label{chap:impl_fest-logging}
@@ -249,9 +254,9 @@ Understanding the data flow of all the tests of an entire test suite, knowing al
 
 \section{AspectJ-based auditing}
 
-We introduce \emph{FEST-Logging}, an AspectJ-based solution that gathers information of the test methods and on annotated methods in the user code. The gathered information (method arguments, screenshots) are visualized in the form of a table and the entire execution tree can be inspected.
+We introduce \emph{FEST-Logging}, an AspectJ-based solution that gathers information of the test methods and on annotated methods in the user code. The gathered information (method arguments, screenshots) are visualized in the form of a table and the entire execution tree can be inspected. AspectJ \cite{Colyer:2004:EAA:1407791} is an implementation of the programming paradign Aspect-Oriented Programming \cite{Kiczales97aspect-orientedprogramming}. We are integrating with \emph{JUnit}, a unit-testing framework for Java. \cite{JUnit}
 
-We introduce the JUnit runner \texttt{CacioFESTLoggingRunner}: enables FEST-Logging and executes the tests using the \emph{Cacio-tta} graphics stack (running the tests in the background). Running the tests with this runner is a \textbf{requirement} of FEST-Logging.
+We introduce the JUnit runner \texttt{CacioFESTLoggingRunner}: enables FEST-Logging and executes the tests using the \emph{Cacio-tta} graphics stack (running the tests in the background) \cite{Cacio_Tta_FEST}. Running the tests with this runner is a \textbf{requirement} of FEST-Logging.
 
 We also introduce two annotations:
 \begin{itemize}
@@ -355,62 +360,15 @@ For performance reasons, FEST-Logging takes the screenshots in two steps: first,
 
 Since the runtime data set can be huge for long tests runs, it is important to provide views that presents the data in an easily accessible, intuitive and adaptive form. 
 
-A possible implementation is to generate an HTML page that contains all the data in the form of a pivot table, with a tree axis showing the call hierarchy, and the columns presenting the method arguments and other context info. The pivot table would support drill-down in the call hierarchy. This table would support the following:
-\begin{itemize}
-\item Closing and expanding nodes (method calls) in the call hierarchy;
-\item Filtering and sorting by the context data (e.g. method names, arguments, annotations).
-\end{itemize}
+The XML report files generated during the tests can be visualized using the HTML page \emph{web/report.html}. The page visualizes the report data in the form of a pivot table, with a tree axis showing the call hierarchy, and there are columns displaying the runtime data such as method arguments, results and elapsed time. The tree supports closing and expanding nodes (method calls) in the call hierarchy, and there is an additional column with links to the screenshots (see figure \ref{fig:fest-logging_test-report}).
 
-The following is a simple example of a test of a text editor application consisting of the following steps:
-\begin{itemize}
-\item create a new text file
-\item enter the text ``hello'' and `` world'', respectively
-\item save the text file to the disk
-\item assert that the editor shows the file name in the window's title
-\item assert that the file exists on the disk and has the appropriate content
-\end{itemize}
+\begin{figure}[h!]
+\centering
+  \includegraphics[width=1\textwidth]{images/fest-logging-test-report.pdf}
+\caption{Report of a test.}
+\label{fig:fest-logging_test-report}
+\end{figure}
 
-Table \ref{fig:formatted_audited_data_report} shows the method calls only of the test, user action and adapter layers, along with the arguments and the return values (if applicable).
-
-\begin{table}
-\caption{Formatted audited data report}
-%\rowcolors{2}{gray!25}{white}
-\begin{tabular}{l l c}
-%\rowcolor{gray!50}
-\hline\hline
-
-Method call & Arguments & Returns \\ [0.5ex] % inserts table heading
-\hline 
-
-\hskip 0cm EditorTest.saveNewTextFile & & PASSED \\
-\hskip 3mm   EditorUserActions.createNewTextFile & & \\
-\hskip 6mm     MenuAdapter.clickFileMenu & & \\ 
-\hskip 6mm     MenuAdapter.clickNewTextFileMenuItem & & \\ 
-\hskip 3mm   EditorUserActions.enterText & text=''hello'' & \\
-\hskip 6mm     TextAreaAdapter.getCaretPosition & & 0 \\
-\hskip 6mm     TextAreaAdapter.insertText & position=0, text=''hello'' & \\
-\hskip 3mm   EditorUserActions.enterText & text=''world'' & \\
-\hskip 6mm     TextAreaAdapter.getCaretPosition & & 5 \\
-\hskip 6mm     TextAreaAdapter.insertText & position=5, text='' world'' & \\
-\hskip 3mm   EditorUserActions.saveCurrentEditor & filename=''C:{\textbackslash}helloWorld.txt'' & \\
-\hskip 6mm     MenuAdapter.clickFileMenu & & \\
-\hskip 6mm     MenuAdapter.clickSaveMenuItem & & \\
-\hskip 6mm     DialogAdapter.setFileName & filename=''C:{\textbackslash}helloWorld.txt'' & \\
-\hskip 6mm     DialogAdapter.clickSaveButton & & \\
-\hskip 6mm     DialogAdapter.expectToDisappear & & \\	 
-\hskip 3mm   EditorUserActions.expectTitle & title=''helloWorld'' & \\
-\hskip 6mm     MainWindowAdapter.expectTitle & title=''My Notepad - helloWorld'' & \\
-\hskip 6mm     FileUtils.expectFileContents &
-    \begin{tabular}[x]{@{}c@{}}
-       path=''C:{\textbackslash}helloWorld.txt", \\
-      contents=''hello world''
-    \end{tabular} & \\
-
-\hline
-
-\end{tabular}
-\label{fig:formatted_audited_data_report}
-\end{table}
 
 \section{Automatic EDT dispatch}\label{sec:edt-dispatch}
 
@@ -434,7 +392,7 @@ def requireCurrentDirBackground(color: Color): Unit = {
 }
 \end{lstlisting}
 
-\subsection{Implementation}\label{sec:edt-dispatch}
+\subsection{Implementation}\label{sec:edt-dispatch-impl}
 
 We define a pointcut that matches methods annotated with \texttt{ExecuteInEDT}, and we use an \emph{around advice} to delegate the invocation to Swing EDT:
 \begin{lstlisting}
@@ -494,6 +452,13 @@ The results are in figure \ref{fig:stats-scomm-test-suite-executions}. The perfo
 \caption{The execution time of the Scala Commander test suite in different setups; in each case, the time is the average execution time of three executions.}
 \label{fig:stats-scomm-test-suite-executions}
 \end{figure}
+
+\section{Conclusion}
+
+In this chapter, we presented FEST-Logging, a framework that integrates into FEST-Swing UI tests, and offers a series of features such as running the tests in the background, detailed auditing of the tests' execution, measuring the executed time, taking screenshots after test actions and failures and easing delegation to Swing EDT. We also presented that obtaining such additional information comes with a reasonable performance cost.
+
+The source code of FEST-Logging, along with the sources of Scala Commander and Scala.React are accessible to the public at \url{https://github.com/zsolt-donca/scomm-dissertation}
+
 
 
 

@@ -1,6 +1,7 @@
 
 \chapter{Introduction}\label{chap:intro}
 
+
 Interactive applications are in a continuously increasing demand, driven by the expansion of computing and mobile devices. A reactive application needs to be ``readily responsive to a stimulus'', thus needs to:
 \begin{enumerate}
 \item \textbf{react to events} --- the application needs to have an \emph{event-driven} design;
@@ -10,9 +11,9 @@ Interactive applications are in a continuously increasing demand, driven by the 
 \end{enumerate}
 There is a growing trend in the programming community over the importance of reactive programming. \cite{ReactiveManifesto}
 
-Development of interactive applications is difficult engineering task: the continuous user input and output, the high number of possible internal states makes it difficult to achieve the above desired properties. The event-driven nature of the applications tend to have a negative effect on the maintainability: the state machines and the inversion of control that is needed to deal with events increase the application's complexity, resulting in code that is possibly difficult to maintain, develop, and is error-prone. 
+Development of interactive applications is difficult engineering task: the continuous user input and output, the high number of possible internal states makes it difficult to achieve the above desired properties. The event-driven nature of the applications tend to have a negative effect its complexity: the state machines and the inversion of control that is needed to deal with events increase the application's complexity, resulting in code that is possibly difficult to maintain, develop, and is error-prone. 
 
-The Scala library \emph{Scala.React}, developed together with the paper \emph{Deprecating the Observer Pattern with Scala.React} offers a solution to the above problem. Its goal is to introduce multiple reactive programming abstractions enabling an event-driven design using declarative implementations, and together with a high-order data-flow DSL\footnote{Domain-Specific Language} embedded into \emph{Scala} makes it possible to implement complex multi-event logic in a direct imperative style, without the need for inversion of control or to implement state machines. \cite{DeprecatingObservers}
+The Scala library \emph{Scala.React}, developed together with the paper \emph{Deprecating the Observer Pattern with Scala.React} offers a solution to the above problem. Its goal is to introduce multiple reactive programming abstractions enabling an event-driven design using declarative implementations, and together with a high-order data-flow DSL\footnote{Domain-Specific Language} embedded into \emph{Scala} makes it possible to implement complex multi-event logic in a direct imperative style, without the need for inversion of control or to implement state machines. \cite{EPFL-REPORT-176887}
 
 \section{Scala Commander}
 
@@ -32,7 +33,7 @@ In chapter \ref{chap:theory}, we present the theoretical background necessary to
 \begin{itemize}
 \item In section \ref{sec:theory_scala} we give a generic overview of Scala, the object-functional programming language. Our goal is to give a quick overview of the language constructs in Scala, and to present the most important features that the concepts in \emph{Scala.React} or in \emph{Scala Commander} rely on. % \emph{Scala.React} and \emph{Scala Commander} in particular is made possible by the highly extensible and feature-rich nature of \emph{Scala}, the object-functional programming language.
 
-\item In section \ref{sec:theory_scala-swing} we present \emph{Scala-Swing}, a Scala library built on \emph{Java Swing}, the primary Java GUI widget toolkit. \cite{SwingWiki} Scala Commander uses Scala-Swing to implement the user interface.
+\item In section \ref{sec:theory_scala-swing} we present \emph{Scala-Swing}\cite{ScalaSwing}, a Scala library built on \emph{Java Swing}, the primary Java GUI widget toolkit. \cite{Robinson:1999:SWI:554530} Scala Commander uses Scala-Swing to implement the user interface.
 
 \item In section \ref{sec:theory_scala-cps-plugin}, we present the \emph{Scala CPS plugin}, a compiler plugin providing delimited continuations using a continuation passing style transformation. These delimited continuations make it possible for the Scala.React data-flow DSL to suspend and resume the control flow in the reactors.
 
