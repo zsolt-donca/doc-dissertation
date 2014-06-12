@@ -263,7 +263,7 @@ FEST-Logging provides the following features:
 \begin{itemize}
 \item auditing tests --- audits the \emph{test}, \emph{setup} and \emph{teardown} methods (annotated with \texttt{@Test}, \texttt{@Before} and \texttt{@After}).
 \item auditing test actions --- audits \emph{all} methods of classes annotated with \texttt{@GUITestBean};
-\item screenshots of test actions --- the runtime system takes screenshots \emph{before} and \emph{after} methods annotated with \texttt{@GUITestAction} are executed;
+\item screenshots of test actions --- the runtime system takes screenshots after methods annotated with \texttt{@GUITestAction} are executed;
 \item screenshots of failed tests --- the runtime system takes screenshots of failing tests, failing either in their \emph{test}, \emph{setup} or \emph{teardown} methods. 
 \end{itemize}
 
@@ -276,10 +276,10 @@ Using a JUnit runner lets us add additional behavior to the execution of a test,
 The test methods and test actions are altered by the aspect class \texttt{FESTLoggingAspect}. Here, we define a series of pointcuts, where each pointcut is to match a method annotated with a certain annotation (see figure \ref{fig:fest-logging-pointcuts}). There are also \emph{around advices} defined referring to the pointcuts, where each advice alters the execution of the method:
 \begin{itemize}
 \item \texttt{auditTestAndGUITestBeanMethods} --- registers and gathers the result of the advised method;
-\item \texttt{takeScreenshotOfFailedTest} --- advises test methods, and takes screenshots if they throw exceptions;
-\item \texttt{takeScreenshotsOfTestActions} --- takes screenshots \emph{before} and \emph{after} executing the advised method.
+\item \texttt{takeScreenshotOfFailedTest} --- executes test methods, and takes a screenshot if they throw exceptions;
+\item \texttt{takeScreenshotsOfTestActions} --- executes the advised method and takes a screenshot of the desktop.
 \end{itemize}
-Each advice relies on the object \texttt{MethodCallStack}, and stores the gathered data in it.
+Each advice relies on the state of the object \texttt{MethodCallStack}, and stores the gathered data in it.
 
 \begin{figure}[h!]
 \centering
