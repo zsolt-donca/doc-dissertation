@@ -11,7 +11,7 @@ Interactive applications are in a continuously increasing demand, driven by the 
 \end{enumerate}
 There is a growing trend in the programming community over the importance of reactive programming. \cite{ReactiveManifesto}
 
-Development of interactive applications is difficult engineering task: the continuous user input and output, the high number of possible internal states makes it difficult to achieve the above desired properties. The event-driven nature of the applications tend to have a negative effect its complexity: the state machines and the inversion of control that is needed to deal with events increase the application's complexity, resulting in code that is possibly difficult to maintain, develop, and is error-prone. 
+Development of interactive applications is difficult engineering task: the continuous user input and output, the high number of possible internal states makes it difficult to achieve the above desired properties. The event-driven nature of the applications tend to have a negative effect its complexity: the state machines and the inversion of control that is needed to deal with events increase the application's complexity, resulting in code that is possibly difficult to maintain, develop, and is error-prone. Also, the control flow of the application is interleaved with reactions to events, leading to interactions that can be hard to foresee.
 
 The Scala library \emph{Scala.React}, developed for the paper \cite{EPFL-REPORT-176887} offers a solution to the above problem. Its goal is to introduce multiple reactive programming abstractions enabling an event-driven design using declarative implementations, and together with a high-order data-flow DSL\footnote{Domain-Specific Language} embedded into \emph{Scala} makes it possible to implement complex multi-event logic in a direct imperative style, without the need for inversion of control or to implement state machines. 
 
@@ -46,14 +46,14 @@ In chapter \ref{chap:theory}, we present the theoretical background necessary to
 \item In section \ref{sec:theory_functional-ui-testing}, we present a design pattern commonly associated with testing of user interfaces.
 \end{itemize}
 
-In the next two chapters, we present the two main applications developed for this paper:
+\noindent In the next two chapters, we present the two main applications developed for this paper:
 \begin{itemize}
 \item In chapter \ref{chap:impl_scala-commander}, we present \emph{Scala Commander}, the file manager application demonstrating the capabilities of \emph{Scala.React}.
 \item In chapter \ref{chap:impl_fest-logging}, we present \emph{FEST-Logging}, the library extending \emph{FEST-Swing} with the goal of easing the testing of Swing user interfaces.
 \end{itemize}
 
-
-Finally, in appendices \ref{chap:cps-examples} and \ref{chap:scala-react-examples}, we present some interesting Scala delimited continuation examples and Scala.React examples, respectively.
+\noindent
+Finally, in appendices \ref{chap:cps-examples} and \ref{chap:scala-react-examples} we present some interesting Scala delimited continuation examples and Scala.React examples, respectively.
 
 
 

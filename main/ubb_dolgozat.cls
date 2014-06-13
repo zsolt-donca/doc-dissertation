@@ -146,7 +146,7 @@
     \begin{center}%
   	  \fontsize{18}{20}\usefont{OT1}{phv}{bc}{n}\selectfont
       \Large\bfseries
-      Lucrare de dizerta\c{t}ie\par
+      Lucrare de diserta\c{t}ie\par
       \vspace*{5mm}
       \huge\@titleRO \par%
       \vspace*{10mm}
