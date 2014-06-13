@@ -206,6 +206,48 @@ Step4:\\
 \chapter{Scala.React examples}\label{chap:scala-react-examples}
 
 
+
+\begin{figure}[h!] 
+\begin{lstlisting}
+object person {
+  val firstName = Var("John")
+  val lastName = Var("Doe")
+  val fullName = Strict { firstName() + " " + lastName() }
+}
+
+observe(person.firstName) {
+  firstName =>
+    println(s"The first name changed to $firstName, and last name is ${person.lastName.now}.")
+}
+
+observe(person.lastName) {
+  lastName =>
+    println(s"The last name changed to $lastName, and the first name is ${person.firstName.now}.")
+}
+
+observe(person.fullName) {
+  fullName =>
+    println(s"Full name changed to $fullName.")
+}
+
+def changeName() {          
+  person.firstName() = "Jane"
+  person.lastName() = "Roe"
+}
+// calling `changeName' prints the following:
+//
+// The first name changed to Jane, and last name is Roe.
+// The last name changed to Roe, and the first name is Jane.
+// Full name changed to Jane Roe.
+\end{lstlisting}
+\caption{This example demonstrates that observers always see the state of the application in a consistent state. With using traditional observer pattern, the observers would see the person having the name ``Jane Doe'' before it finally changes to ``Jane Roe''.}
+\label{fig:example_scala-react-consistency}
+\end{figure}
+
+
+
+
+
 \begin{figure}[h!] 
 \begin{lstlisting}
 object MyDomain extends Domain {
@@ -261,46 +303,6 @@ object ScalaReactLineDrawing extends SimpleSwingApplication with Observing{
 \end{lstlisting}
 \caption{A sample application painting a closed line with the mouse using Scala.React \emph{reactor} and \emph{event streams}.}
 \label{fig:example_scala-react-line-drawing}
-\end{figure}
-
-
-
-
-\begin{figure}[h!] 
-\begin{lstlisting}
-object person {
-  val firstName = Var("John")
-  val lastName = Var("Doe")
-  val fullName = Strict { firstName() + " " + lastName() }
-}
-
-observe(person.firstName) {
-  firstName =>
-    println(s"The first name changed to $firstName, and last name is ${person.lastName.now}.")
-}
-
-observe(person.lastName) {
-  lastName =>
-    println(s"The last name changed to $lastName, and the first name is ${person.firstName.now}.")
-}
-
-observe(person.fullName) {
-  fullName =>
-    println(s"Full name changed to $fullName.")
-}
-
-def setToGirl() {          
-  person.firstName() = "Jane"
-  person.lastName() = "Roe"
-}
-// calling `setToGirl' prints the following:
-//
-// The first name changed to Jane, and last name is Roe.
-// The last name changed to Roe, and the first name is Jane.
-// Full name changed to Jane Roe.
-\end{lstlisting}
-\caption{This example demonstrates that observers always see the state of the application in a consistent state. With using traditional observer pattern, the observers would see the person having the name ``Jane Doe'' before it finally changes to ``Jane Roe''.}
-\label{fig:example_scala-react-consistency}
 \end{figure}
 
 
