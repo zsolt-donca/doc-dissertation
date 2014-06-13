@@ -37,10 +37,9 @@ Of course, the above example can be written in a much more concise way in Scala,
 \begin{lstlisting}
 val sum = (0 to 100).sum
 \end{lstlisting} 
+\noindent This works because the method \texttt{sum} is defined on \emph{numeric} sequences.
 
-This works because the method \texttt{sum} is defined on \emph{numeric} sequences.
-
-The following example defines a method that calculates the below expression \(\frac{1}{x^2}\) for \(x \neq 0\) and otherwise returns \(0\):
+\noindent The following example defines a method that calculates the below expression \(\frac{1}{x^2}\) for \(x \neq 0\) and otherwise returns \(0\):
 
 \begin{lstlisting}
 def f(x: Double): Double = {
@@ -75,7 +74,7 @@ Scala uses a unified type system that includes value types and reference types (
 \item \texttt{scala.ScalaObject}: any class defined in Scala code implicitly extends this trait;
 \end{itemize}
 
-There are two special-purpose types at the button of the hierarchy:
+\noindent There are two special-purpose types at the button of the hierarchy:
 \begin{itemize}
 \item \texttt{scala.Null}: this type implicitly extends \emph{any reference type}, and there is only one instance of it, the \texttt{null} reference. Note that \texttt{Null} is not a subtype of the value types; for instance, it's not possible to assign \texttt{null} to a variable of type \texttt{scala.Int}.
 
@@ -89,7 +88,7 @@ There are two special-purpose types at the button of the hierarchy:
   \label{fig:scala_type_hierarchy}  
 \end{figure}
 
-Note that there are also conversions defined between primitive types, as figure \ref{fig:scala_type_hierarchy} shows using dashed arrows.
+\noindent Note that there are also conversions defined between primitive types, as figure \ref{fig:scala_type_hierarchy} shows using dashed arrows.
 
 \subsubsection{Classes}
 
@@ -139,7 +138,7 @@ val c6 = Complex.one + Complex.i
 
 This is in direct parallel with a class in Java having both static and instance members: the members defined in the companion object correspond to the the static members, and the members defined in the class correspond to the intance members. Note that this is also actually how classes with companion objects are implemented in Scala (the compiler generates only one class with static and instance members).
 
-The above example uses Scala's equivalent of overloading the method call operator \texttt{()}: the expression \texttt{a(x)} is equivalent to \texttt{a.apply(x)} where \texttt{a} is an object of a type that defines the method \texttt{apply}.
+The above example uses Scala's equivalent of overloading the method call operator: the expression \texttt{a(x)} is equivalent to \texttt{a.apply(x)} where \texttt{a} is an object of a type that defines the method \texttt{apply}.
 
 \subsubsection{Traits}
 
@@ -448,9 +447,11 @@ See figure \ref{fig:example_scala-react-line-drawing} in appendix \ref{chap:scal
 
 \section{Scala CPS Plugin}\label{sec:theory_scala-cps-plugin}
 
-Delimited continuations are a versatile programming tool. Their most important use is based on their ability to suspend and resume sequential code paths in a controlled way. The Scala CPS plugin is a compiler plugin that enables the programmer to have delimited continuations in direct-style code, without much syntactic overhead. This is implemented by the plugin selectively transforming the source code in compile time, driven by annotations and other structures placed into the code by the programmer. Multiple variants of delimited continuations have been described in the literature, and the Scala CPS plugin implements the so-called Danvy and Filinski model, with two primitive operations, \texttt{shift} and \texttt{reset}.
+The concept of continuations are naturally present in programming: a conditional expression selects a continuation from two possible branches, or throwing an exception discards the rest of the continuation. Although continuations are implicitly built-in into every language, having control over them explicitly is not typical \cite{Asai11introductionto}.
 
-A delimited continuation embodies a certain part of the program. When invoking a delimited continuation, the control returned to the caller, and it may also return a value. Inside the continuation, at any point the current fragment of the call stack starting from the delimiting block can be saved to be later reused (possibly multiple times), or discarded. This control over the execution of the control flow can is the essence of the delimited continuations.
+Delimited continuations are a versatile programming tool. Their most important use is based on their ability to suspend and resume sequential code paths in a controlled way. The Scala CPS plugin is a compiler plugin that enables the programmer to have delimited continuations in direct-style code, without much syntactic overhead. This is implemented by the plugin selectively transforming the source code in compile time, driven by annotations and other structures placed into the code by the programmer. Multiple variants of delimited continuations have been described in the literature, and the Scala CPS plugin implements the so-called Danvy and Filinski model \cite{Danvy90abstractingcontrol}, with two primitive operations, \texttt{shift} and \texttt{reset} \cite{CPSTransform}. 
+
+A delimited continuation embodies a certain part of the program. When invoking a delimited continuation, the control is returned to the caller, and it may also return a value. Inside the continuation, at any point the current fragment of the call stack starting from the delimiting block can be saved to be later reused (possibly multiple times), or discarded. This control over the execution of the control flow can is the essence of the delimited continuations.
 
 Since the Scala CPS plugin uses compile-time transformation, applications using it do not need a special VM or other specific runtime support.
 
@@ -552,8 +553,12 @@ The paper \cite{CPSTransform} describes some academic use cases (Type-Safe print
 \begin{itemize}
 \item Akka Dataflow Concurrency --- Akka implements Oz-style dataflow concurrency by using a special API for \emph{Futures} that enables a complementary way of writing synchronous-looking code that in reality is asynchronous. \cite{AkkaDataflow}
 \item Scala.React --- A reactive programming library for Scala developed based on the paper \cite{EPFL-REPORT-176887}.
-
+\item Swarm --- a distributed computing framework allowing the creation of web applications which can scale transparently through a novel portable continuation-based approach. \cite{SwarmConcurrency}
 \end{itemize}
+
+There is an implementation of \emph{nondeterministic evaluation} in Scala based on delimited continuations \cite{ScalaNonDeterministicEvaluation}. 
+
+\emph{Generators} were also implemented in Scala using the delimited continuations \cite{ScalaGenerators}. Generators are a form of special \emph{iterables} where the series of elements are produced by a function one at a time, at the same time while a caller iterates over them. The delimited continuations in Scala allows such generators to be implemented directly in the form of an algorithm with \emph{yield} statements (similarly to the \emph{yield return} statement in C\#), instead of having to encode the algorithm in the form of a \emph{state machine} (which is required in e.g. Java).
 
 %There are typically two use cases of delimited continuations. In cases where the \texttt{reset} block returns a value, the continuation itself is typically runs to its end, with the return results being the primary meaning of the computation which is directly returned to the invoker of the \texttt{reset} block. This is similar to how an ordinary computation (without delimited continuations) would obtain its value.
 
@@ -692,7 +697,7 @@ Scala-React's data-flow language has a series of operations on reactors that off
 
 \subsection{Implementation details}\label{sec:scala-react-impl}
 
-Scala.React proceeds in discreet steps, called \emph{turns}. Part of the implementation is a \emph{scheduler} and a \emph{propagator}. External updates, such as when an event source is triggered, are forwarded to the scheduler which schedules a revalidation request for the next turn. In the next turn, the propagator takes over, and revalidates all related events and signals, possibly creating other turns (e.g. when there is a dependent signal on a signal being updated). This turn-by-turn evaluation strategy makes it possible that the system is always in a consistent state (e.g. it's \emph{glitch-free}). 
+Scala.React proceeds in discreet steps, called \emph{turns}. Part of the implementation is a \emph{scheduler} and a \emph{propagator}. External updates, such as when an event source is triggered, are forwarded to the scheduler which schedules a revalidation request for the next turn. In the next turn, the propagator takes over, and revalidates all related events and signals, possibly creating other turns (e.g. when there is a dependent signal on a signal being updated). This turn-by-turn evaluation strategy makes it possible that the system is always in a consistent state (e.g. it is \emph{glitch-free}). See figure \ref{fig:example_scala-react-consistency} in appendix \ref{chap:scala-react-examples} for an example demonstrating consistency.
 
 \subsubsection{Signal expressions}
 

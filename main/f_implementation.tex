@@ -237,9 +237,9 @@ Note that the \texttt{abortOn} operator executes the body and aborts it as soon 
 
 \section{Conclusion}
 
-In this chapter, we presented the most important implementation details of Scala Commander, a design based on the reactive framework Scala.React. Through the example of the \emph{directory lists}, we presented how an MVC-based application can take advantage of the reactive abstractions of Scala.React, such as \emph{event streams}, \emph{signals}, and \emph{reactors}, and we have seen how the automatic change propagation between dependent signals effortlessly keeps the state of the application consistent and up-to-date. Through the example of copy, we have seen how a \emph{reactor} can be used to implement a relatively complex event-driven logic in a direct, imperative style. 
+In this chapter, we presented the most important implementation details of Scala Commander, a design based on the reactive framework Scala.React. Through the example of the \emph{directory lists}, we presented how an MVC-based application can take advantage of the reactive abstractions of Scala.React, and we have seen how the automatic change propagation between dependent signals effortlessly keeps the state of the application consistent and up-to-date. Through the example of copy, we have seen how a \emph{reactor} can be used to implement a relatively complex event-driven logic in a direct, imperative style without inversion of control. 
 
-
+	
 
 
 \chapter{FEST-Logging}\label{chap:impl_fest-logging}
@@ -435,7 +435,7 @@ The total number of test actions executed while running the test suite is 115, a
 \label{fig:stats-scomm-test-suite}
 \end{figure}
 
-To demonstrate the performance implications of using FEST-Logging, we compared the execution time of the tests running without FEST-Logging (but still using Cacio-tta) with the execution time of the tests running with FEST-Logging in two modes: with method auditing only, and with both auditing and screenshots of the test actions. In each case, we used the average execution time of three consecutive runs.
+To demonstrate the performance implications of using FEST-Logging, we compared the execution time of the tests running without FEST-Logging (but still using Cacio-tta) with the execution time of the tests running with FEST-Logging in two modes: with method auditing only, and with both auditing and screenshots of the test actions. In each case, we used the average execution time of three consecutive runs. All measurements were done on an HP EliteBook 8570w laptop with Intel Core i7 3720QM CPU 2.60 GHz and 8 GB RAM on Windows 7, with Scala 2.10.3 on Oracle's Java 1.7 update 55. 
 
 The results are in figure \ref{fig:stats-scomm-test-suite-executions}. The performance drawback of using auditing only is relatively low (2.11\%). Using both auditing and taking screenshots of the 115 test actions takes a somewhat higher 5\% of the total execution time, thanks to the parallel saving of the screenshots. In the case when it is not practically possible to save the screenshots in parallel to the tests, the total execution time grows to a significant 50.17 seconds, FEST-Logging taking 21.48\% of the total time.
 
@@ -452,6 +452,7 @@ The results are in figure \ref{fig:stats-scomm-test-suite-executions}. The perfo
 \caption{The execution time of the Scala Commander test suite in different setups; in each case, the time is the average execution time of three executions.}
 \label{fig:stats-scomm-test-suite-executions}
 \end{figure}
+
 
 \section{Conclusion}
 
