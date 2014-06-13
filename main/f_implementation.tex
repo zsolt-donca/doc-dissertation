@@ -30,19 +30,7 @@ The design of the implementation is according to the Model-View-Controller desig
 
 \begin{figure}[h!]
 \centering
-\begin{tikzpicture} 
-\umlemptyclass[x=0, y=-2]{DiskState}
-\umlemptyclass[x=3, y=0]{DirectoryListModel}
-\umlemptyclass[x=9, y=0]{DirectoryListController} 
-\umlemptyclass[x=6, y=-2]{DirectoryListView} 
-\umluniassoc[geometry=--]{DirectoryListModel}{DiskState} 
-\umluniassoc[geometry=--]{DirectoryListController}{DirectoryListModel} 
-\umluniassoc[geometry=--]{DirectoryListController}{DirectoryListView} 
-\umluniassoc[geometry=--]{DirectoryListView}{DirectoryListModel} 
-\umlVHdep{DirectoryListModel}{DirectoryListView}
-\umlHVdep{DirectoryListView}{DirectoryListController}
-\umlVHdep{DiskState}{DirectoryListModel}
-\end{tikzpicture}
+  \includegraphics[width=1\textwidth]{images/scomm-mvc-pattern.pdf}
 \caption{The directory list components.}
 \label{fig:scomm_mvc_pattern}
 \end{figure}
@@ -57,7 +45,7 @@ The state of the model is defined by the following signal variables:
 \item \texttt{currentDirectory: Var[Path]} --- holds the current directory (as a \texttt{java.nio.Path} object);
 \item \texttt{selectedPaths: Var[Set[Path]]} --- holds the set of currently selected paths (the selection is highlighted on the user interface);
 \item \texttt{active: Var[Boolean]} --- a flag representing whether the directory list is active or inactive;
-\item \texttt{diskState: Var[Long]} --- a counter that is incremented whenever the disk is modified and the model need refreshing (u.i. after copying/moving/renaming/deleting, or when the user presses \emph{Refresh}).
+\item \texttt{diskState: DiskState} --- an object with a counter signal that is incremented whenever the disk is modified and the model need refreshing (u.i. after copying/moving/renaming/deleting, or when the user presses \emph{Refresh}).
 \end{itemize}
 
 There are also two derived signals:

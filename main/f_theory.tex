@@ -829,16 +829,7 @@ The purpose of this separation is that the parts can be interchangeable (e.g. mo
 
 \begin{figure}[h!]
 \centering
-\begin{tikzpicture} 
-\umlemptyclass[x=0, y=0]{Model} 
-\umlemptyclass[x=6, y=0]{Controller} 
-\umlemptyclass[x=3, y=-2]{View} 
-\umluniassoc[geometry=--]{Controller}{Model} 
-\umluniassoc[geometry=--]{Controller}{View} 
-\umluniassoc[geometry=--]{View}{Model} 
-\umlVHdep{Model}{View}
-\umlHVdep{View}{Controller}
-\end{tikzpicture}
+  \includegraphics[width=1\textwidth]{images/mvc-design-pattern.pdf}
 \caption{The Model-View-Controller pattern.}
 \label{fig:mvc_pattern}
 \end{figure}
