@@ -140,9 +140,109 @@ This is in direct parallel with a class in Java having both static and instance 
 
 The above example uses Scala's equivalent of overloading the method call operator: the expression \texttt{a(x)} is equivalent to \texttt{a.apply(x)} where \texttt{a} is an object of a type that defines the method \texttt{apply}.
 
-\subsubsection{Traits}
+\subsection{Traits}
 
-Traits are Scala's replacement for Java interfaces. In Java versions prior to 8, interfaces are highly restricted, able to contain only abstract method declarations. This leads to difficulties with convenience methods (the same methods must be reimplemented in each implementing class), and to the inability to add methods to an interface without breaking compatibility (issue for published libraries). Traits in Scala are similar to an abstract class in Java: besides defining abstract methods (just as an interface), they can provide implementations for methods, and can even have fields. A trait can extend an extend one or more other traits, and even classes. The only limitation of a trait a trait cannot have parameters (constructors).
+Traits are a fundamental unit of code reuse in Scala. A trait encapsulates method definitions (abstract and concrete) and field definitions, which can then be reused by mixing them into classes. Unlike class inheritance, in which each class must inherit from just one superclass, a class can mix in any number of traits. Mixing traits with fields and concrete methods is similar to multiple inheritance present in other languages. Traits are similar to abstract classes, but traits cannot have parameters (constructors).
+
+Let us consider the following example:
+\begin{lstlisting}
+trait Named {
+  def name: String
+}
+\end{lstlisting}
+This defines the abstract method \texttt{name}. The method is implicitly abstract (without having to use the keyword \texttt{abstract}) as no method body follows the declaration. This trait can now be mixed in into a class:
+\begin{lstlisting}
+class Cat(nickname: String) extends Named {
+  override def name: String = nickname
+}
+\end{lstlisting}
+Just as with ordinary inheritance, any \texttt{Cat} instance can be treated as an instance of the trait \texttt{Named}:
+
+\begin{lstlisting}
+def printName(o: Named) { println("name is: " + o.name) }
+...
+val myCat = new Cat("Bobby")
+printName(bobby)
+\end{lstlisting}
+
+\noindent A class can mix in any number of traits, and can even have a subclass:
+\begin{lstlisting}
+class Animal { ... }
+trait FourLegged { ... }
+trait Mammal { ... }
+
+class Cat(nickname: String) extends Animal with FourLegged with Mammal with Named { ... }
+\end{lstlisting}
+
+
+
+\subsubsection{Thin versus rich interface}
+
+Traits are Scala's replacement for Java interfaces. In Java versions prior to 8, interfaces are highly restricted, able to contain only abstract method declarations. This leads to difficulties with convenience methods (the same methods must be reimplemented in each implementing class), and to the inability to add methods to an interface without breaking compatibility (issue for published libraries). 
+
+One major use of traits is to automatically add methods to a class in terms of methods the class already has. This way, traits can enrich a \emph{thin} interface making it into a \emph{rich} interface. 
+
+Thinness versus richness is a common trade-off in object-oriented design. The trade-off is between the implementers and the clients of an interface. The richer an interface is, the more convenient it is for a client to pick a method that exactly suits his needs. A thin interface, on the other hand, contains less methods and is easier to implement, however the clients might need to write extra code to use it.
+
+Scala traits makes it possible to have interfaces without this trade-off: it is possible to have interfaces with few abstract methods that \emph{need} to be defined by an implementation --- the methods of a thin interface --- and at the same time to have concrete methods that rely on those abstract methods --- the extra methods of a rich interface. Implementations can choose to override any of the methods implemented in the trait (e.g. for performance reasons).
+
+Consider the following example:
+\begin{lstlisting}
+trait TwoNames extends Named {
+  def firstName: String
+  def lastName: String
+
+  def fullName: String = s"$firstName $lastName"
+  def lexicalFullName: String = s"$lastName, $firstName"
+
+  def name = fullName // implements from Named
+}
+\end{lstlisting}
+Here, the trait \texttt{TwoNames} extends the trait \texttt{Named}, implementing the method \texttt{name} with the full name, while declaring the methods \texttt{firstName} and \texttt{lastName} abstract. It also defines the convenience method \texttt{lexical\-Full\-Name}. To implement a trait like this in Java prior to Java 8, one could use an abstract class in Java, eliminating the possibility of using other base classes in extending classes (maybe of similar design). Another possibility would be to make \texttt{TwoNames} an interface, to the move the implementation of the methods \texttt{fullName}, \texttt{lexicalFullName} and \texttt{name} to a utility class, and to reference that utility class in all classes extending the interface. While this workaround is technically possible, it is cumbersome and rarely preferred.
+
+
+
+\subsubsection{Linearization}
+
+Traits are a way to inherit from multiple class-like constructs, but they differ in important ways from the multiple inheritance present in many languages. One difference is especially important: the interpretation of \emph{super}. With multiple inheritance, the method called by a super call can be determined right where the call appears. With traits, the method called is determined by a linearization of the classes and traits that are mixed into a class, enabling a kind of stacked modifications similar to the \emph{decorator} pattern.
+
+Consider the following example:
+\begin{lstlisting}
+class Animal {
+  def description: String = "animal"
+}
+trait FourLegged extends Animal {
+  override def description: String = "four-legged " + super.description
+}
+trait Furry extends Animal {
+  override def description: String = "furry " + super.description
+}
+trait Carnivorous extends Animal {
+  override def description: String = "carnivorous " + super.description
+}
+trait Feline extends FourLegged with Furry with Carnivorous {
+  override def description: String = "feline, that is, a " + super.description
+}
+trait Domesticated extends Animal {
+  override def description: String = "domesticated " + super.description
+}
+class Cat extends Feline with Domesticated {
+  override def description: String = "I am a cat, a " + super.description
+}
+println(new Cat().description)
+// prints: I am a cat, a domesticated feline, that is, a carnivorous furry four-legged animal
+\end{lstlisting}
+
+The linearization goes from right to left, and from the bottom to the top of the hierarchy:\[ \texttt{Cat} \rightarrow \texttt{Domesticated} \rightarrow \texttt{Feline} \rightarrow \texttt{Carnivorous} \rightarrow \texttt{Furry} \rightarrow \texttt{FourLegged} \rightarrow \texttt{Animal} \]
+
+In Scala, classes and traits are always are always inherited only once, meaning that there won't be four different instances of the class \texttt{Animal} in a \texttt{Cat} instance \footnote{contrary to the (non-virtual) multiple inheritance of C++, one of the most widely used languages supporting multiple inheritance}. Practically, the \texttt{extends Animal} part in the above traits make the class \texttt{Animal} a requirement of the traits, and the class \texttt{Cat} automatically extends the class \texttt{Animal} through the traits. Mixing in the trait \texttt{Feline} to a class already having a different base class results in compilation error:
+\begin{lstlisting}
+class Plant
+class PottedPlant extends Plant with Feline
+// Error: illegal inheritance; superclass Plant is not a subclass of the superclass Animal of the mixin trait Feline
+\end{lstlisting}
+
+
 
 \subsection{Syntactic flexibility}
 Scala has significantly more flexible syntax when compared to Java. This includes:
@@ -445,15 +545,15 @@ Note that the members \texttt{listenTo} and \texttt{reactions} are defined by th
 
 See figure \ref{fig:example_scala-react-line-drawing} in appendix \ref{chap:scala-react-examples} for a complete example of a \texttt{scala.swing} application listening to mouse events.
 
-\section{Scala CPS Plugin}\label{sec:theory_scala-cps-plugin}
+\section{Scala Continuations Plugin}\label{sec:theory_scala-cps-plugin}
 
 The concept of continuations are naturally present in programming: a conditional expression selects a continuation from two possible branches, or throwing an exception discards the rest of the continuation. Although continuations are implicitly built-in into every language, having control over them explicitly is not typical \cite{Asai11introductionto}.
 
-Delimited continuations are a versatile programming tool. Their most important use is based on their ability to suspend and resume sequential code paths in a controlled way. The Scala CPS plugin is a compiler plugin that enables the programmer to have delimited continuations in direct-style code, without much syntactic overhead. This is implemented by the plugin selectively transforming the source code in compile time, driven by annotations and other structures placed into the code by the programmer. Multiple variants of delimited continuations have been described in the literature, and the Scala CPS plugin implements the so-called Danvy and Filinski model \cite{Danvy90abstractingcontrol}, with two primitive operations, \texttt{shift} and \texttt{reset} \cite{CPSTransform}. 
+Delimited continuations are a versatile programming tool. Their most important use is based on their ability to suspend and resume sequential code paths in a controlled way. The Scala Continuations plugin is a compiler plugin that enables the programmer to have delimited continuations in direct-style code, without much syntactic overhead. This is implemented by the plugin selectively transforming the source code in compile time using a continuation passing style transformation, driven by annotations and other structures placed into the code by the programmer. Multiple variants of delimited continuations have been described in the literature, and the Scala Continuations plugin implements the so-called Danvy and Filinski model \cite{Danvy90abstractingcontrol}, with two primitive operations, \texttt{shift} and \texttt{reset} \cite{CPSTransform}. 
 
 A delimited continuation embodies a certain part of the program. When invoking a delimited continuation, the control is returned to the caller, and it may also return a value. Inside the continuation, at any point the current fragment of the call stack starting from the delimiting block can be saved to be later reused (possibly multiple times), or discarded. This control over the execution of the control flow can is the essence of the delimited continuations.
 
-Since the Scala CPS plugin uses compile-time transformation, applications using it do not need a special VM or other specific runtime support.
+Since the Scala Continuations plugin uses compile-time transformation, applications using it do not need a special VM or other specific runtime support.
 
 \subsection{\texttt{shift} and \texttt{reset}}
 
@@ -511,13 +611,13 @@ println(reset) // prints 12
 \end{lstlisting}
 \\
 \end{tabular}
-\caption{Left is a delimited continuation, and right is the equivalent manually-transformed CPS versions.}
+\caption{Left is a delimited continuation, and right is the equivalent manually-transformed continuation passing style versions.}
 \label{fig:example_cps_generic}
 \end{figure}
 
 \subsubsection{Answer type modification}
 
-The Scala CPS plugin allows full answer type polymorphism in a statically type-safe manner. This allows the return type of the \texttt{reset} block (the type of the last expression in the block) and the return type of the individual \texttt{shift} blocks to be different. The transformation accurately tracks answer-type modification throughout the continuation and ensures, in compile time, that no type errors can occur in runtime (u.i. if the continuation can possibly run through path of conflicting answer types, the compilation fails with error.)
+The Scala Continuations plugin allows full answer type polymorphism in a statically type-safe manner. This allows the return type of the \texttt{reset} block (the type of the last expression in the block) and the return type of the individual \texttt{shift} blocks to be different. The transformation accurately tracks answer-type modification throughout the continuation and ensures, in compile time, that no type errors can occur in runtime (u.i. if the continuation can possibly run through path of conflicting answer types, the compilation fails with error.)
 
 Figure \ref{fig:example_cps_answer_type_modification} shows a simple an example where answer-type modification takes place. The type of the entire continuation is \texttt{String}, the answer type of the \texttt{reset} block is \texttt{Int}, and the answer type is modified in the \texttt{shift} block from \texttt{Int} to \texttt{String}. Note that even though the \texttt{shift} block's body returns a \texttt{String} (which the final answer type of the continuation), the actual type of the \texttt{shift} \emph{expression} is a third type \texttt{Char}, which corresponds to the input type of the function \texttt{k}.
 
@@ -543,7 +643,7 @@ println(charToHexString('A'))
 
 A delimited continuation does not has to consist of a single block that the compiler can understand entirely. It is possible to have \texttt{shift} blocks defined in methods or functions, and thus the \texttt{shift} blocks to be associated only in runtime with a certain \texttt{reset} block. Since the final return type of the \texttt{reset} block is not necessarily reflected in a \texttt{shift} block at all (because of answer type polymorphism), the code containing such ``detached'' \texttt{shift} blocks \textbf{must} be annotated with the annotation \texttt{@cpsParam[B, C]} where \texttt{B} is the type of computation state after computation has executed, and before control is returned to the shift, and \texttt{C} is the eventual return type of this delimited computation. 
 
-Because the compiler needs to transform CPS code, non-CPS code cannot (neither directly nor indirectly) call CPS-code. This can lead to awkward limitations, such as the inability to iterate through a sequence with a simple for-loop (the reason is that a for-loop is desugareted by the compiler to a \texttt{foreach} method call on the collection with the loop as a closure body being the argument). Code that needs to interact with CPS-code thus needs to be marked to CPS-code itself (by the annotation @cpsParam), but then such code can no longer be used by non-CPS code (even if it doesn't contain \texttt{shift} blocks). A reason is that a method returning the type \texttt{A} annotated with \texttt{@cpsParam[B,C]} is effectively transformed by the compiler to return the internal type \texttt{ControlContext[A,B,C]}. 
+Because the compiler needs to transform continuation passing style (CPS) code, non-CPS code cannot (neither directly nor indirectly) call CPS-code. This can lead to awkward limitations, such as the inability to iterate through a sequence with a simple for-loop (the reason is that a for-loop is desugareted by the compiler to a \texttt{foreach} method call on the collection with the loop as a closure body being the argument). Code that needs to interact with CPS-code thus needs to be marked to CPS-code itself (by the annotation @cpsParam), but then such code can no longer be used by non-CPS code (even if it doesn't contain \texttt{shift} blocks). A reason is that a method returning the type \texttt{A} annotated with \texttt{@cpsParam[B,C]} is effectively transformed by the compiler to return the internal type \texttt{ControlContext[A,B,C]}. 
 
 \fullref{chap:cps-examples} contains examples demonstrating the annotation @cpsParam.
 
@@ -570,7 +670,7 @@ There is an implementation of \emph{nondeterministic evaluation} in Scala based 
 
 Programming systems with interactive user interfaces requires a considerable amount of engineering to deal with continuous user input and output, yet the predominant programming models dealing with continuous state change in applications is the observer pattern \cite{Gamma:1995:DPE:186897}. The Scala library \emph{Scala.React} offers a reactive data-flow programming model, and by that it solves numerous engineering problems observer pattern-based design faces. Amongst multiple Scala features, this is enabled by the higher order concepts of events and state, enabled by Scala's higher-order functions, and by a data-flow DSL embedded into Scala, enabled by continuation passing style transformation that \emph{Scala} offers. Its design is also heavily based on Scala's \emph{traits}, simplifying the binding of observer-based interfaces to the reactive abstractions.\cite{EPFL-REPORT-176887}
 
-Object-oriented reactive applications traditionally implement reactivity by using the Observer pattern  \cite{EPFL-REPORT-176887}\cite{rescala:2014}. The observer pattern relies on the concept of \emph{inversion of control} to decouple the observers from the subjects (observables), reversing the intuitive flow of the application and making the code harder to understand, analyze and maintain. Typical implementations often require a lot of boilerplate code, further complicating the code of the program. Separation of concern is often hard to achieve because the observer logic typically needs to be mixed with the application's business logic. It is difficult to maintain data consistency because the observer pattern does not incorporate the concept of transactionality or atomicity when notifying observers of changes. Also, the observer pattern enforces mutability and relying on side-effects, enforcing exclusively imperative an programming style. The paper \cite{EPFL-REPORT-176887} argues how Scala.React resolve these and many other issues with the observer pattern.
+Object-oriented reactive applications traditionally implement reactivity by using the Observer pattern  \cite{EPFL-REPORT-176887}\cite{rescala:2014}. The observer pattern relies on the concept of \emph{inversion of control} to decouple the observers from the subjects (observables), reversing the intuitive flow of the application and making the code harder to understand, analyze and maintain. Typical implementations often require a lot of boilerplate code, further complicating the code of the program. Separation of concern is often hard to achieve because the observer logic typically needs to be mixed with the application's business logic. It is difficult to maintain data consistency because the observer pattern does not incorporate the concept of transactionality or atomicity when notifying observers of changes. Also, the observer pattern enforces mutability and relying on side-effects, enforcing exclusively imperative an programming style. The paper \cite{EPFL-REPORT-176887} argues how Scala.React resolve these and many other problems with the observer pattern.
 
 \subsection{Event streams}
 
@@ -626,7 +726,7 @@ Events and signals are very tightly related concepts. They are both \emph{reacti
 
 \subsection{Reactors: observers without inversion of control}
 
-One of the most important issues with having to deal with observer-based architecture is the \emph{inversion of control}. When an operation consisting of multiple events needs to be modeled, the typical solution is to model it as a \emph{state machine}. 
+One of the most important problem with having to deal with observer-based architecture is the \emph{inversion of control}. When an operation consisting of multiple events needs to be modeled, the typical solution is to model it as a \emph{state machine}. 
 
 Let us consider a simple drawing application that lets us draw a closed line using the mouse (variables \texttt{mouseDown}, \texttt{mouseMove} and \texttt{mouseUp} are event sources):
 
@@ -651,7 +751,7 @@ observe(mouseUp) {
 }
 \end{lstlisting}
 
-The above example has multiple fundamental issues. The drawing logic is inverted (scattered through three observer blocks), the observers needs to be manually disposed, and it is prone to errors (e.g. if a mouse up event is somehow triggered without a mouse down event, the code fails with a null-pointer runtime exceptions --- a defensive code would increase complexity).
+The above example has multiple fundamental problems. The drawing logic is inverted (scattered through three observer blocks), the observers needs to be manually disposed, and it is prone to errors (e.g. if a mouse up event is somehow triggered without a mouse down event, the code fails with a null-pointer runtime exceptions --- a defensive code would increase complexity).
 
 Ideally, we want to encode a state-machine that can be described informally as follows:
 \begin{enumerate}
@@ -678,7 +778,7 @@ Reactor.loop {
 }
 \end{lstlisting}
 
-The method \texttt{Reactor.loop} creates a reactor that repeatedly executes the given block. The variable \texttt{self} lets us control the reactor, which supports actions such as \texttt{await}, \texttt{awaitNext} and \texttt{loopUntil}. The actions \texttt{await} and \texttt{awaitNext} pauses the reactor until the given event source emits; whenever it does emit, the reactor is resumed from exactly where it was paused, with all its internal state (e.g. \texttt{path}) restored. This is enabled by the Scala CPS plugin: the method \texttt{loop} contains a \texttt{reset} block, and the methods \texttt{await} and \texttt{awaitNext} contain a corresponding \texttt{shift} block that creates an observer on the given event source that resumes the continuation. For more details, see \ref{sec:scala-react-impl}.
+The method \texttt{Reactor.loop} creates a reactor that repeatedly executes the given block. The variable \texttt{self} lets us control the reactor, which supports actions such as \texttt{await}, \texttt{awaitNext} and \texttt{loopUntil}. The actions \texttt{await} and \texttt{awaitNext} pauses the reactor until the given event source emits; whenever it does emit, the reactor is resumed from exactly where it was paused, with all its internal state (e.g. \texttt{path}) restored. This is enabled by the Scala Continuations plugin: the method \texttt{loop} contains a \texttt{reset} block, and the methods \texttt{await} and \texttt{awaitNext} contain a corresponding \texttt{shift} block that creates an observer on the given event source that resumes the continuation. For more details, see \ref{sec:scala-react-impl}.
 
 \subsection{Data-flow language}
 

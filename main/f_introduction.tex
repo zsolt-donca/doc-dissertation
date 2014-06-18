@@ -27,7 +27,7 @@ We also implement \emph{FEST-Logging}, the library extending \emph{FEST-Swing} w
 
 To ease development of tests, \emph{FEST-Logging} is integrated with \emph{Cacio-tta}, a graphics stack that enables the tests to run in background. There is also a simple annotation-based feature that provides automatic delegation of UI-related operations to the Swing EDT thread.
 
-\section{The structure of this paper}
+\section{The structure of this thesis}
 
 In chapter \ref{chap:theory}, we present the theoretical background necessary to understand the applications \emph{Scala Commander} and \emph{FEST-Logging}:
 \begin{itemize}
@@ -35,7 +35,7 @@ In chapter \ref{chap:theory}, we present the theoretical background necessary to
 
 \item In section \ref{sec:theory_scala-swing} we present \emph{Scala-Swing}\cite{ScalaSwing}, a Scala library built on \emph{Java Swing}, the primary Java GUI widget toolkit. \cite{Robinson:1999:SWI:554530} Scala Commander uses Scala-Swing to implement the user interface.
 
-\item In section \ref{sec:theory_scala-cps-plugin}, we present the \emph{Scala CPS plugin}, a compiler plugin providing delimited continuations using a continuation passing style transformation. These delimited continuations make it possible for the Scala.React data-flow DSL to suspend and resume the control flow in the reactors.
+\item In section \ref{sec:theory_scala-cps-plugin}, we present the \emph{Scala Continuations plugin}, a compiler plugin providing delimited continuations using a continuation passing style transformation. These delimited continuations make it possible for the Scala.React data-flow DSL to suspend and resume the control flow in the reactors.
 
 \item In section \ref{sec:theory_scala-react}, we present the library \emph{Scala.React}, its main concepts and some implementation details.
 
